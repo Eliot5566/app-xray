@@ -3,9 +3,11 @@ import {
   XRAY_SCHEMA,
   type BrowserWindowFacts,
   type Endpoint,
+  type FuseState,
   type IpcChannel,
   type ModuleRef,
   type SourceLocation,
+  type StorageUse,
   type XrayReport,
 } from "./schema.js";
 
@@ -20,6 +22,11 @@ interface ReaEvidence {
     format?: string;
     root_artifact_sha256?: string;
     graph?: { nodes?: ReaNode[] };
+    summary?: {
+      native_addon_bindings?: number;
+      sender_validation_observations?: number;
+      ipc?: { main_handlers?: number; dynamic_channel_operations?: number };
+    };
     limitations?: string[];
   };
 }
@@ -47,21 +54,39 @@ export interface NormalizeInput {
   evidence: unknown;
   reaVersion: string;
   electron: VersionHit | null;
+  /** The path the user asked for; REA may have analyzed a filtered copy of it. */
+  inputPath?: string;
+  /** Files left out of a source checkout (tests, stories, tooling). */
+  excludedFiles?: number;
+  fuses?: FuseState[] | null;
   now?: Date;
 }
 
 /** Turns one REA analyze-javascript-application Evidence record into an xray report (findings empty). */
-export function normalize({ evidence, reaVersion, electron, now = new Date() }: NormalizeInput): XrayReport {
+export function normalize({
+  evidence,
+  reaVersion,
+  electron,
+  inputPath,
+  excludedFiles = 0,
+  fuses = null,
+  now = new Date(),
+}: NormalizeInput): XrayReport {
   const ev = evidence as ReaEvidence;
   const result = ev.normalized_result ?? {};
   const nodes = result.graph?.nodes ?? [];
+  const summary = result.summary;
 
-  const pkg = first(nodes, "package");
+  // Monorepos inventory several package.json files; the app is the one at the root.
+  const packages = nodes.filter((n) => n.kind === "package");
+  const pkg = packages.find((n) => n.observations?.[0]?.properties?.["path"] === "package.json") ?? packages[0];
   const modules = new Map<string, Set<string>>();
   const endpoints: Endpoint[] = [];
   const browserWindows: BrowserWindowFacts[] = [];
   const preloads = new Set<string>();
   const ipcChannels: IpcChannel[] = [];
+  const remotePages = new Set<string>();
+  const storage: StorageUse[] = [];
 
   for (const node of nodes) {
     const obs = node.observations?.[0];
@@ -101,6 +126,17 @@ export function normalize({ evidence, reaVersion, electron, now = new Date() }: 
         if (resolved) preloads.add(resolved);
         break;
       }
+      case "electron-renderer": {
+        const declared = str(props["declared_path"]);
+        if (declared && props["resolution_status"] === "external" && /^https?:\/\//i.test(declared)) {
+          remotePages.add(declared);
+        }
+        break;
+      }
+      case "storage": {
+        storage.push({ kind: str(props["storage_kind"]) ?? "unknown", mechanism: str(props["mechanism"]), location });
+        break;
+      }
       case "ipc-channel": {
         const channel = str(props["channel"]);
         if (!channel) break;
@@ -122,7 +158,7 @@ export function normalize({ evidence, reaVersion, electron, now = new Date() }: 
     schema: XRAY_SCHEMA,
     generatedAt: now.toISOString(),
     target: {
-      inputPath: result.input_path ?? "",
+      inputPath: inputPath ?? result.input_path ?? "",
       format: result.format ?? "unknown",
       sha256: result.root_artifact_sha256 ?? null,
       name: str(pkgProps["name"]),
@@ -146,14 +182,24 @@ export function normalize({ evidence, reaVersion, electron, now = new Date() }: 
     endpoints: dedupeEndpoints(endpoints),
     browserWindows,
     preloads: [...preloads].sort(),
+    remotePages: [...remotePages].sort(),
     ipcChannels: dedupeIpc(ipcChannels),
+    ipc: {
+      mainHandlers: summary?.ipc?.main_handlers ?? 0,
+      senderValidations: summary?.sender_validation_observations ?? 0,
+      dynamicChannelOperations: summary?.ipc?.dynamic_channel_operations ?? 0,
+    },
+    storage,
+    nativeAddonBindings: summary?.native_addon_bindings ?? 0,
+    fuses,
     findings: [],
-    limitations: [...new Set([...(result.limitations ?? []), ...(ev.limitations ?? [])])],
+    limitations: [
+      ...(excludedFiles > 0
+        ? [`Source checkout: ${excludedFiles} test, story, build-tool and minified/generated files were left out. Rerun with --all-files to include them.`]
+        : []),
+      ...new Set([...(result.limitations ?? []), ...(ev.limitations ?? [])]),
+    ],
   };
-}
-
-function first(nodes: ReaNode[], kind: string): ReaNode | undefined {
-  return nodes.find((n) => n.kind === kind);
 }
 
 function toLocation(loc: ReaLocation | undefined): SourceLocation | null {

@@ -2,6 +2,7 @@ import { spawn } from "node:child_process";
 import { readFile } from "node:fs/promises";
 import { createRequire } from "node:module";
 import path from "node:path";
+import type { FuseState } from "./schema.js";
 
 const require = createRequire(import.meta.url);
 
@@ -88,4 +89,18 @@ const APPLICATION_GRAPH_ONLY = [
 
 export function analyzeJavaScriptApplication(appPath: string, onProgress?: (message: string) => void) {
   return runRea(["analyze-javascript-application", path.resolve(appPath), ...APPLICATION_GRAPH_ONLY], onProgress);
+}
+
+interface FuseEvidence {
+  normalized_result?: {
+    slices?: Array<{ sentinels?: Array<{ fuses?: Array<{ name?: string; state?: string }> }> }>;
+  };
+}
+
+/** Reads the fuse wire of one Electron executable. Universal binaries report per slice; the first wins. */
+export async function inspectElectronFuses(executable: string): Promise<FuseState[] | null> {
+  const ev = (await runRea(["inspect-electron-fuses", path.resolve(executable)])) as FuseEvidence;
+  const fuses = ev.normalized_result?.slices?.[0]?.sentinels?.[0]?.fuses;
+  if (!fuses) return null;
+  return fuses.flatMap((f) => (f.name && f.state ? [{ name: f.name, state: f.state }] : []));
 }
