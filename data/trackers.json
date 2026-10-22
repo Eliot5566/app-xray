@@ -1,0 +1,20 @@
+{
+  "note": "Host suffixes of common analytics, advertising and crash-reporting services. A match means the app contains the address, not that it sends data there at runtime.",
+  "services": [
+    { "name": "Google Analytics", "category": "analytics", "hosts": ["google-analytics.com", "analytics.google.com", "googletagmanager.com"] },
+    { "name": "Mixpanel", "category": "analytics", "hosts": ["mixpanel.com"] },
+    { "name": "Segment", "category": "analytics", "hosts": ["segment.io", "segment.com"] },
+    { "name": "Amplitude", "category": "analytics", "hosts": ["amplitude.com"] },
+    { "name": "PostHog", "category": "analytics", "hosts": ["posthog.com"] },
+    { "name": "Heap", "category": "analytics", "hosts": ["heapanalytics.com"] },
+    { "name": "Hotjar", "category": "session-recording", "hosts": ["hotjar.com", "hotjar.io"] },
+    { "name": "FullStory", "category": "session-recording", "hosts": ["fullstory.com"] },
+    { "name": "Sentry", "category": "crash-reporting", "hosts": ["sentry.io"] },
+    { "name": "Bugsnag", "category": "crash-reporting", "hosts": ["bugsnag.com"] },
+    { "name": "Datadog", "category": "monitoring", "hosts": ["datadoghq.com", "browser-intake-datadoghq.com"] },
+    { "name": "New Relic", "category": "monitoring", "hosts": ["newrelic.com", "nr-data.net"] },
+    { "name": "Microsoft Clarity", "category": "session-recording", "hosts": ["clarity.ms"] },
+    { "name": "DoubleClick", "category": "advertising", "hosts": ["doubleclick.net"] },
+    { "name": "Facebook", "category": "advertising", "hosts": ["connect.facebook.net", "graph.facebook.com"] }
+  ]
+}
