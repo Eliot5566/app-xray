@@ -1,0 +1,25 @@
+{
+  "note": "Open-source Electron apps used to check app-xray against real code. Each entry is cloned at its default branch (depth 1) and scanned at `path`.",
+  "apps": [
+    { "name": "electron-quick-start", "repo": "electron/electron-quick-start", "path": "." },
+    { "name": "joplin", "repo": "laurent22/joplin", "path": "packages/app-desktop" },
+    { "name": "signal-desktop", "repo": "signalapp/Signal-Desktop", "path": "." },
+    { "name": "element-desktop", "repo": "element-hq/element-desktop", "path": "." },
+    { "name": "github-desktop", "repo": "desktop/desktop", "path": "app" },
+    { "name": "bitwarden-desktop", "repo": "bitwarden/clients", "path": "apps/desktop" },
+    { "name": "mattermost-desktop", "repo": "mattermost/desktop", "path": "." },
+    { "name": "insomnia", "repo": "Kong/insomnia", "path": "packages/insomnia" },
+    { "name": "etcher", "repo": "balena-io/etcher", "path": "." },
+    { "name": "stretchly", "repo": "hovancik/stretchly", "path": "." },
+    { "name": "marktext", "repo": "marktext/marktext", "path": "." },
+    { "name": "standard-notes", "repo": "standardnotes/app", "path": "packages/desktop" },
+    { "name": "jitsi-meet-electron", "repo": "jitsi/jitsi-meet-electron", "path": "." },
+    { "name": "ferdium", "repo": "ferdium/ferdium-app", "path": "." },
+    { "name": "freetube", "repo": "FreeTubeApp/FreeTube", "path": "." },
+    { "name": "zettlr", "repo": "Zettlr/Zettlr", "path": "." },
+    { "name": "youtube-music", "repo": "th-ch/youtube-music", "path": "." },
+    { "name": "webtorrent-desktop", "repo": "webtorrent/webtorrent-desktop", "path": "." },
+    { "name": "hyper", "repo": "vercel/hyper", "path": "." },
+    { "name": "beekeeper-studio", "repo": "beekeeper-studio/beekeeper-studio", "path": "apps/studio" }
+  ]
+}

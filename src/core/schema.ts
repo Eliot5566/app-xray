@@ -17,7 +17,7 @@ export interface Engine {
   evidenceId: string | null;
 }
 
-export type FrameworkKind = "electron";
+export type FrameworkKind = "electron" | "chromium";
 
 export interface Framework {
   kind: FrameworkKind;

@@ -29,6 +29,8 @@ export function electronSupportRule(releases = loadData<ElectronReleases>("elect
           continue;
         }
         const major = Number(fw.version.split(".")[0]);
+        const chromium = report.frameworks.find((f) => f.kind === "chromium")?.version;
+        const bundled = chromium ? `Its bundled Chromium ${chromium} misses every fix since.` : "Its bundled Chromium misses every fix since.";
         const behind = oldestSupported - major;
         const asOf = `as of ${releases.snapshotDate}, Electron ${oldestSupported}–${latest} are supported`;
         if (behind <= 0) {
@@ -44,7 +46,7 @@ export function electronSupportRule(releases = loadData<ElectronReleases>("elect
             ruleId: this.id,
             severity: behind >= 6 ? "high" : "medium",
             title: `Electron ${fw.version} no longer receives security fixes`,
-            detail: `${behind} major version${behind === 1 ? "" : "s"} behind the oldest supported line (${asOf}). Its bundled Chromium misses every fix since.`,
+            detail: `${behind} major version${behind === 1 ? "" : "s"} behind the oldest supported line (${asOf}). ${bundled}`,
             locations: [],
           });
         }

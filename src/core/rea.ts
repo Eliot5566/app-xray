@@ -77,6 +77,15 @@ function progressMessage(line: string): string | null {
   }
 }
 
+// app-xray reads REA's application graph, not its per-function semantic graph. Left at REA's
+// defaults, the semantic graph can use up the result budget and push application facts out
+// (Joplin desktop: 1 endpoint instead of 11, 63 s instead of 45 s), so keep it minimal.
+// REA rejects 0 for these limits.
+const APPLICATION_GRAPH_ONLY = [
+  "--max-semantic-nodes", "1",
+  "--max-semantic-unknowns", "1",
+];
+
 export function analyzeJavaScriptApplication(appPath: string, onProgress?: (message: string) => void) {
-  return runRea(["analyze-javascript-application", path.resolve(appPath)], onProgress);
+  return runRea(["analyze-javascript-application", path.resolve(appPath), ...APPLICATION_GRAPH_ONLY], onProgress);
 }

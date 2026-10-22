@@ -43,9 +43,15 @@ review and extend.
 - Static analysis only. The app is never run. A finding means the code *contains*
   something, not that it *does* it at runtime.
 - Only literal values are seen. Addresses built at runtime are missed.
-- Electron version comes from `package.json`, a `version` file, or macOS
-  `Electron Framework.framework`. Reading it from Windows/Linux binaries is next.
+- Electron version comes from `package.json`, macOS `Electron Framework.framework`,
+  the user-agent string inside a packaged Windows/Linux executable (which also
+  gives the bundled Chromium version), or Electron's `version` file.
 - Tested with `rea-agents` 6.7.0 (pinned).
+
+## Corpus benchmark
+
+`bench/corpus.json` lists 20 open-source Electron apps. `npm run bench` clones
+each one, scans it and writes `bench-out/summary.md` with timings and findings.
 
 ## Responsible use
 

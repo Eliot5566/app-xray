@@ -18,7 +18,8 @@
     "build": "tsc -p tsconfig.json",
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "test": "vitest run",
-    "xray": "node dist/cli.js"
+    "xray": "node dist/cli.js",
+    "bench": "npm run build && node bench/run-corpus.mjs"
   },
   "dependencies": {
     "rea-agents": "6.7.0"

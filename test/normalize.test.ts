@@ -64,6 +64,18 @@ describe("rules", () => {
     expect(findings[0]?.severity).toBe("high");
   });
 
+  it("names the bundled Chromium when it is known", () => {
+    const report = normalize({
+      evidence,
+      reaVersion: "6.7.0",
+      electron: { version: "28.1.0", chromium: "120.0.6099.56", source: "app user-agent string" },
+      now,
+    });
+    expect(report.frameworks.map((f) => `${f.kind} ${f.version}`)).toEqual(["electron 28.1.0", "chromium 120.0.6099.56"]);
+    const detail = applyRules(report).findings.find((f) => f.ruleId === "electron-support")?.detail;
+    expect(detail).toContain("Chromium 120.0.6099.56");
+  });
+
   it("does not flag a supported Electron", () => {
     const report = { ...base, frameworks: [{ kind: "electron" as const, version: "44.2.0", versionSource: "test" }] };
     const electron = applyRules(report).findings.filter((f) => f.ruleId === "electron-support");
