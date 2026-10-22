@@ -24,8 +24,9 @@ node dist/cli.js scan /path/to/app --out xray-out
 
 - `xray-out/xray.json`: the facts and findings (schema `app-xray/report@0`)
 - `xray-out/report.html`: one self-contained page you can share
+- `xray-out/card.svg`: a 1200×630 summary image for posts and READMEs
 
-## What it checks today (v0.3)
+## What it checks today (v0.4)
 
 | Rule | What it reports |
 | --- | --- |
@@ -43,6 +44,11 @@ node dist/cli.js scan /path/to/app --out xray-out
 When `<app-path>` is inside a source checkout (a git repository or package
 workspace), tests, stories, build tooling and minified or generated bundles are
 left out, and the report says how many. Pass `--all-files` to keep them.
+
+Apps with 400 or more source files are analyzed in parallel batches, one per
+CPU core, and the results are merged. This is faster and keeps more facts than a
+single run, which can hit REA's result budget; the report notes that links
+between batches, such as an IPC send and its handler, may be incomplete.
 
 Electron support data is a snapshot in `data/electron-releases.json`; service
 signatures live in `data/trackers.json`. Both are plain JSON so they are easy to
@@ -71,7 +77,7 @@ describe components and facts; they never include the app's code.
 
 ## 中文說明
 
-App X-Ray 用 REA 分析桌面 App，輸出一頁可分享的 HTML 報告，內容包括框架與版本、該版本是否仍有安全更新、內嵌的分析／追蹤服務、連線網域，以及視窗安全設定。每一項都標出它來自哪個檔案的哪一行。
+App X-Ray 用 REA 分析桌面 App，輸出一頁可分享的 HTML 報告和一張可貼到社群的摘要圖卡（card.svg），內容包括框架與版本、該版本是否仍有安全更新、內嵌的分析／追蹤服務、連線網域，以及視窗安全設定。每一項都標出它來自哪個檔案的哪一行。
 
 只做靜態分析，不會執行目標 App。請只分析自己擁有或有權檢查的軟體。
 
