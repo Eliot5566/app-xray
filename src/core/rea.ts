@@ -1,7 +1,10 @@
 import { spawn } from "node:child_process";
-import { readFile } from "node:fs/promises";
+import { existsSync } from "node:fs";
+import { readFile, stat } from "node:fs/promises";
 import { createRequire } from "node:module";
+import os from "node:os";
 import path from "node:path";
+import { listSourceFiles, mergeEvidence, planBatches, runLimited } from "./batches.js";
 import type { FuseState } from "./schema.js";
 
 const require = createRequire(import.meta.url);
@@ -87,8 +90,27 @@ const APPLICATION_GRAPH_ONLY = [
   "--max-semantic-unknowns", "1",
 ];
 
-export function analyzeJavaScriptApplication(appPath: string, onProgress?: (message: string) => void) {
-  return runRea(["analyze-javascript-application", path.resolve(appPath), ...APPLICATION_GRAPH_ONLY], onProgress);
+export async function analyzeJavaScriptApplication(appPath: string, onProgress?: (message: string) => void) {
+  const root = path.resolve(appPath);
+  const isDir = await stat(root).then((s) => s.isDirectory(), () => false);
+  const batches = isDir ? planBatches(await listSourceFiles(root)) : [];
+  if (batches.length <= 1) {
+    return runRea(["analyze-javascript-application", root, ...APPLICATION_GRAPH_ONLY], onProgress);
+  }
+  onProgress?.(`analyzing ${batches.reduce((n, b) => n + b.length, 0)} files in ${batches.length} parallel batches`);
+  let done = 0;
+  const parts = await runLimited(
+    batches.map((batch) => async () => {
+      // package.json in every batch: it names the app and declares its Electron entry points.
+      const selection = existsSync(path.join(root, "package.json")) ? ["package.json", ...batch] : batch;
+      const args = selection.flatMap((f) => ["--source-path", f]);
+      const ev = await runRea(["analyze-javascript-application", root, ...APPLICATION_GRAPH_ONLY, ...args]);
+      onProgress?.(`batch ${++done}/${batches.length} done`);
+      return ev;
+    }),
+    os.availableParallelism(),
+  );
+  return mergeEvidence(parts);
 }
 
 interface FuseEvidence {
