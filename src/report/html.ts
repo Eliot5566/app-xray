@@ -65,6 +65,29 @@ export function renderHtml(report: XrayReport): string {
 </section>
 
 <section>
+  <h2>Remote pages, data and packaging</h2>
+  ${table(
+    ["Remote page loaded in a window"],
+    report.remotePages.map((u) => [u]),
+    "No remote pages are loaded into app windows.",
+  )}
+  ${table(
+    ["Storage", "How", "Where"],
+    report.storage.map((st) => [st.kind, st.mechanism ?? "—", loc(st.location)]),
+    "No on-device storage calls found.",
+  )}
+  ${
+    report.fuses
+      ? table(
+          ["Electron fuse", "State"],
+          report.fuses.map((f) => [f.name, f.state]),
+          "No fuses reported.",
+        )
+      : `<p class="empty">No packaged executable was found, so Electron fuses were not read.</p>`
+  }
+</section>
+
+<section>
   <h2>What this report cannot see</h2>
   <ul class="limits">${report.limitations.map((l) => `<li>${esc(l)}</li>`).join("")}</ul>
 </section>

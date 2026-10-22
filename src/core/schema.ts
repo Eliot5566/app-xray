@@ -59,6 +59,26 @@ export interface IpcChannel {
   location: SourceLocation | null;
 }
 
+export interface FuseState {
+  name: string;
+  /** "enabled" | "disabled" | "removed" | other states REA reports. */
+  state: string;
+}
+
+export interface IpcStats {
+  mainHandlers: number;
+  /** Places where a handler checks which page sent the message. */
+  senderValidations: number;
+  /** IPC calls whose channel name is computed at runtime. */
+  dynamicChannelOperations: number;
+}
+
+export interface StorageUse {
+  kind: string;
+  mechanism: string | null;
+  location: SourceLocation | null;
+}
+
 export type Severity = "info" | "low" | "medium" | "high";
 
 export interface Finding {
@@ -86,7 +106,14 @@ export interface XrayReport {
   endpoints: Endpoint[];
   browserWindows: BrowserWindowFacts[];
   preloads: string[];
+  /** Remote http(s) pages loaded into app windows. */
+  remotePages: string[];
   ipcChannels: IpcChannel[];
+  ipc: IpcStats;
+  storage: StorageUse[];
+  nativeAddonBindings: number;
+  /** Electron fuses of the packaged executable; null when there is no executable to read. */
+  fuses: FuseState[] | null;
   findings: Finding[];
   /** What the engine could not see; shown in the report instead of being hidden. */
   limitations: string[];

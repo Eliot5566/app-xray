@@ -25,14 +25,24 @@ node dist/cli.js scan /path/to/app --out xray-out
 - `xray-out/xray.json`: the facts and findings (schema `app-xray/report@0`)
 - `xray-out/report.html`: one self-contained page you can share
 
-## What it checks today (v0.1)
+## What it checks today (v0.3)
 
 | Rule | What it reports |
 | --- | --- |
-| `electron-support` | Electron version and whether it is in the supported window (latest three majors) |
+| `electron-support` | Electron (and bundled Chromium) version, and whether it is in the supported window (latest three majors) |
+| `electron-fuses` | Packaged apps: fuses left permissive, such as `RunAsNode` or disabled ASAR integrity checks |
 | `electron-web-preferences` | `nodeIntegration`, `contextIsolation`, `webSecurity`, `sandbox` and similar settings that weaken isolation |
+| `remote-content` | Remote pages loaded into app windows, raised to high when some window also weakens isolation |
+| `ipc-sender-validation` | Main-process IPC handlers with no check of which page sent the message |
+| `dynamic-ipc-channels` | IPC calls whose channel name is chosen at runtime |
 | `known-services` | Addresses of known analytics, session-recording, advertising and crash-reporting services |
 | `plain-http` | Remote addresses reached over unencrypted HTTP |
+| `local-data` | Where the app stores data on the device (informational) |
+| `native-addons` | Native add-ons the app loads (informational) |
+
+When `<app-path>` is inside a source checkout (a git repository or package
+workspace), tests, stories, build tooling and minified or generated bundles are
+left out, and the report says how many. Pass `--all-files` to keep them.
 
 Electron support data is a snapshot in `data/electron-releases.json`; service
 signatures live in `data/trackers.json`. Both are plain JSON so they are easy to
