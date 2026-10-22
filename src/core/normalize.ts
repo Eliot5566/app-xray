@@ -135,7 +135,10 @@ export function normalize({ evidence, reaVersion, electron, now = new Date() }: 
       evidenceId: ev.evidence_id ?? null,
     },
     frameworks: isElectron
-      ? [{ kind: "electron", version: electron?.version ?? null, versionSource: electron?.source ?? null }]
+      ? [
+          { kind: "electron", version: electron?.version ?? null, versionSource: electron?.source ?? null },
+          ...(electron?.chromium ? [{ kind: "chromium" as const, version: electron.chromium, versionSource: electron.source }] : []),
+        ]
       : [],
     modules: [...modules]
       .map(([specifier, importers]) => ({ specifier, importedBy: [...importers].sort() }))

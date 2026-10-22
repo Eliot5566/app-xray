@@ -2,3 +2,4 @@ node_modules/
 dist/
 xray-out/
 *.log
+bench-out/
