@@ -1,0 +1,31 @@
+{
+  "name": "app-xray",
+  "version": "0.1.0",
+  "description": "An ingredients and privacy label for any app, built on REA (Reverse Engineer Anything).",
+  "license": "MIT",
+  "type": "module",
+  "bin": {
+    "xray": "dist/cli.js"
+  },
+  "files": [
+    "dist",
+    "data"
+  ],
+  "engines": {
+    "node": "^22.19.0 || ^24.11.0 || >=26.0.0"
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "test": "vitest run",
+    "xray": "node dist/cli.js"
+  },
+  "dependencies": {
+    "rea-agents": "6.7.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.0",
+    "typescript": "^5.9.0",
+    "vitest": "^3.2.0"
+  }
+}

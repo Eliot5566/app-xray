@@ -1,0 +1,1 @@
+{"name":"demo-app","version":"1.2.3","main":"main.js","devDependencies":{"electron":"28.1.0"},"dependencies":{"@sentry/electron":"4.15.0","axios":"1.6.0"}}
