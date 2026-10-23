@@ -3,3 +3,6 @@ dist/
 xray-out/
 *.log
 bench-out*/
+site/
+gallery-reports/
+reports/

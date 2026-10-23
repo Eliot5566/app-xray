@@ -1,0 +1,51 @@
+name: gallery
+
+# Scans the open-source apps in bench/corpus.json and publishes the gallery to GitHub Pages.
+# One-time setup: Settings → Pages → Build and deployment → Source: GitHub Actions.
+
+on:
+  schedule:
+    - cron: "0 3 * * 1" # Mondays 03:00 UTC, to pick up new releases of the apps
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths: ["src/**", "data/**", "bench/corpus.json", "bench/run-corpus.mjs", "package-lock.json"]
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: gallery
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm run build
+      - name: Scan the corpus
+        run: node bench/run-corpus.mjs --out gallery-reports
+      - name: Build the site
+        run: node dist/cli.js gallery gallery-reports --out site --base-url "https://${{ github.repository_owner }}.github.io/${{ github.event.repository.name }}/"
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: site
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4

@@ -14,6 +14,7 @@ import {
   ReaError,
 } from "./core/rea.js";
 import type { FuseState } from "./core/schema.js";
+import { buildGallery } from "./gallery.js";
 import { renderBadge } from "./report/badge.js";
 import { renderCard } from "./report/card.js";
 import { renderHtml } from "./report/html.js";
@@ -21,19 +22,27 @@ import { renderPng } from "./report/png.js";
 import { applyRules } from "./rules/index.js";
 
 const USAGE = `Usage: xray scan <app-path> [--out <dir>] [--rea-json <file>] [--all-files] [--quiet]
+       xray gallery <reports-dir> [--out <dir>] [--base-url <url>]
 
+scan
   <app-path>         An installed app folder or .app bundle, an app.asar, or a source checkout
   --out <dir>        Where to write the report files (default: ./xray-out)
   --rea-json <file>  Reuse a saved "rea analyze-javascript-application --json" result
   --all-files        In a source checkout, also analyze tests, stories and build tooling
-  --quiet            No progress output`;
+  --quiet            No progress output
+
+gallery
+  <reports-dir>      Folder of scan outputs (<name>/xray.json), e.g. from npm run bench
+  --out <dir>        Where to write the static site (default: ./site)
+  --base-url <url>   Public URL of the site, for link previews and README badges`;
 
 async function main(argv: string[]): Promise<number> {
   const { positionals, values } = parseArgs({
     args: argv,
     allowPositionals: true,
     options: {
-      out: { type: "string", default: "xray-out" },
+      out: { type: "string" },
+      "base-url": { type: "string" },
       "rea-json": { type: "string" },
       "all-files": { type: "boolean", default: false },
       quiet: { type: "boolean", default: false },
@@ -42,9 +51,17 @@ async function main(argv: string[]): Promise<number> {
   });
 
   const [command, target] = positionals;
-  if (values.help || command !== "scan" || !target) {
+  if (values.help || (command !== "scan" && command !== "gallery") || !target) {
     console.log(USAGE);
     return values.help ? 0 : 2;
+  }
+
+  if (command === "gallery") {
+    const outDir = path.resolve(values.out ?? "site");
+    const apps = await buildGallery(target, outDir, { baseUrl: values["base-url"] });
+    if (apps.length === 0) throw new UsageError(`No reports found in ${target}: expected <name>/xray.json folders.`);
+    if (!values.quiet) process.stderr.write(`gallery: ${apps.length} apps, wrote ${path.join(outDir, "index.html")}\n`);
+    return 0;
   }
 
   const log = (msg: string) => {
@@ -86,7 +103,7 @@ async function main(argv: string[]): Promise<number> {
     normalize({ evidence, reaVersion, electron, inputPath: path.resolve(target), excludedFiles: scope?.excludedFiles ?? 0, fuses }),
   );
 
-  const outDir = path.resolve(values.out);
+  const outDir = path.resolve(values.out ?? "xray-out");
   await mkdir(outDir, { recursive: true });
   await writeFile(path.join(outDir, "xray.json"), `${JSON.stringify(report, null, 2)}\n`);
   await writeFile(path.join(outDir, "report.html"), renderHtml(report));
