@@ -25,7 +25,7 @@ mkdirSync(values.work, { recursive: true });
 const results = [];
 for (const app of corpus.apps.filter((a) => !only || only.has(a.name))) {
   const clone = path.join(values.work, app.name);
-  const result = { name: app.name, repo: app.repo, path: app.path };
+  const result = { name: app.name, title: app.title, repo: app.repo, path: app.path };
   try {
     if (!existsSync(clone)) {
       execFileSync("git", ["clone", "--quiet", "--depth", "1", `https://github.com/${app.repo}.git`, clone], {

@@ -1,9 +1,23 @@
 import type { Finding, SourceLocation, XrayReport } from "../core/schema.js";
 
-export function renderHtml(report: XrayReport): string {
+export interface PageMeta {
+  /** Absolute URL of this page, for link previews. */
+  url?: string;
+  /** Absolute URL of the 1200×630 summary image, for link previews. */
+  image?: string;
+  /** Link shown above the title, e.g. back to the gallery. */
+  back?: { href: string; label: string };
+  /** Source browser URL of the app folder; file locations become links to it. */
+  sourceBase?: string;
+  /** Markdown that embeds this report's badge in a README. */
+  badgeMarkdown?: string;
+}
+
+export function renderHtml(report: XrayReport, meta: PageMeta = {}): string {
   const title = report.target.name ?? "Unnamed app";
   const counts = countBySeverity(report.findings);
   const electron = report.frameworks.find((f) => f.kind === "electron");
+  const loc = (l: SourceLocation | null): Cell => locCell(l, meta.sourceBase);
 
   return `<!doctype html>
 <html lang="en">
@@ -11,12 +25,12 @@ export function renderHtml(report: XrayReport): string {
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>${esc(title)} · App X-Ray</title>
-<style>${CSS}</style>
+${previewTags(`${title} · App X-Ray`, summaryLine(report), meta)}<style>${CSS}</style>
 </head>
 <body>
 <main>
 <header>
-  <p class="eyebrow">App X-Ray</p>
+  <p class="eyebrow">${meta.back ? `<a href="${esc(meta.back.href)}">${esc(meta.back.label)}</a> · ` : ""}App X-Ray</p>
   <h1>${esc(title)}${report.target.version ? ` <span class="ver">${esc(report.target.version)}</span>` : ""}</h1>
   <p class="meta">${electron ? `Electron ${esc(electron.version ?? "version unknown")} · ` : ""}${report.endpoints.length} addresses · ${report.modules.length} modules · ${report.ipcChannels.length} IPC channels</p>
   <ul class="tally">
@@ -26,7 +40,7 @@ export function renderHtml(report: XrayReport): string {
 
 <section>
   <h2>Findings</h2>
-  ${report.findings.length === 0 ? `<p class="empty">No rule matched.</p>` : report.findings.map(renderFinding).join("\n")}
+  ${report.findings.length === 0 ? `<p class="empty">No rule matched.</p>` : report.findings.map((f) => renderFinding(f, loc)).join("\n")}
 </section>
 
 <section>
@@ -87,7 +101,17 @@ export function renderHtml(report: XrayReport): string {
   }
 </section>
 
-<section>
+${
+  meta.badgeMarkdown
+    ? `<section>
+  <h2>README badge</h2>
+  <p>Maintainers can show this report in their README:</p>
+  <pre class="snippet">${esc(meta.badgeMarkdown)}</pre>
+</section>
+
+`
+    : ""
+}<section>
   <h2>What this report cannot see</h2>
   <ul class="limits">${report.limitations.map((l) => `<li>${esc(l)}</li>`).join("")}</ul>
 </section>
@@ -104,25 +128,63 @@ export function renderHtml(report: XrayReport): string {
 `;
 }
 
-function renderFinding(f: Finding): string {
-  const where = f.locations.length ? `<p class="where">${f.locations.map((l) => esc(loc(l))).join(" · ")}</p>` : "";
+/** One line for link previews: the severity tally and the Electron version. */
+export function summaryLine(report: XrayReport): string {
+  const counts = countBySeverity(report.findings);
+  const electron = report.frameworks.find((f) => f.kind === "electron");
+  const tally = (["high", "medium", "low"] as const).map((s) => `${counts[s]} ${s}`).join(", ");
+  return `${electron ? `Electron ${electron.version ?? "version unknown"}. ` : ""}Findings: ${tally}. Static analysis with REA.`;
+}
+
+/** Open Graph and Twitter tags, so a shared link shows the summary card. */
+export function previewTags(title: string, description: string, meta: { url?: string; image?: string }): string {
+  const tags = [
+    `<meta name="description" content="${esc(description)}">`,
+    `<meta property="og:type" content="website">`,
+    `<meta property="og:title" content="${esc(title)}">`,
+    `<meta property="og:description" content="${esc(description)}">`,
+  ];
+  if (meta.url) tags.push(`<meta property="og:url" content="${esc(meta.url)}">`);
+  if (meta.image) {
+    tags.push(
+      `<meta property="og:image" content="${esc(meta.image)}">`,
+      `<meta property="og:image:width" content="1200">`,
+      `<meta property="og:image:height" content="630">`,
+      `<meta name="twitter:card" content="summary_large_image">`,
+    );
+  }
+  return `${tags.join("\n")}\n`;
+}
+
+function renderFinding(f: Finding, loc: (l: SourceLocation) => Cell): string {
+  const where = f.locations.length ? `<p class="where">${f.locations.map((l) => cellHtml(loc(l))).join(" · ")}</p>` : "";
   return `<article class="finding sev-${f.severity}">
   <p class="badge">${f.severity}</p>
   <div><h3>${esc(f.title)}</h3><p>${esc(f.detail)}</p>${where}</div>
 </article>`;
 }
 
-function table(head: string[], rows: string[][], empty: string): string {
+/** A table cell: plain text, or text that links somewhere. */
+type Cell = string | { text: string; href: string };
+
+function cellHtml(c: Cell): string {
+  return typeof c === "string" ? esc(c) : `<a href="${esc(c.href)}">${esc(c.text)}</a>`;
+}
+
+function table(head: string[], rows: Cell[][], empty: string): string {
   if (rows.length === 0) return `<p class="empty">${esc(empty)}</p>`;
   return `<div class="scroll"><table>
 <thead><tr>${head.map((h) => `<th>${esc(h)}</th>`).join("")}</tr></thead>
-<tbody>${rows.map((r) => `<tr>${r.map((c) => `<td>${esc(c)}</td>`).join("")}</tr>`).join("\n")}</tbody>
+<tbody>${rows.map((r) => `<tr>${r.map((c) => `<td>${cellHtml(c)}</td>`).join("")}</tr>`).join("\n")}</tbody>
 </table></div>`;
 }
 
-function loc(l: SourceLocation | null): string {
+function locCell(l: SourceLocation | null, sourceBase?: string): Cell {
   if (!l) return "—";
-  return l.line !== undefined ? `${l.path}:${l.line}` : l.path;
+  const text = l.line !== undefined ? `${l.path}:${l.line}` : l.path;
+  if (!sourceBase) return text;
+  const href = `${sourceBase.replace(/\/$/, "")}/${l.path.split("/").map(encodeURIComponent).join("/")}${l.line !== undefined ? `#L${l.line}` : ""}`;
+  return { text, href };
 }
 
 function countBySeverity(findings: Finding[]) {
@@ -151,6 +213,7 @@ const CSS = `
 *{box-sizing:border-box}
 body{margin:0;background:var(--bg);color:var(--fg);font:15px/1.55 system-ui,-apple-system,"Segoe UI",sans-serif}
 main{max-width:920px;margin:0 auto;padding:32px 16px 64px}
+.eyebrow a{color:inherit}
 .eyebrow{margin:0;color:var(--muted);font-size:13px;letter-spacing:.08em;text-transform:uppercase}
 h1{margin:4px 0 6px;font-size:30px}
 .ver{color:var(--muted);font-weight:400;font-size:20px}
@@ -168,8 +231,10 @@ h2{font-size:18px;border-bottom:1px solid var(--line);padding-bottom:6px}
 .scroll{overflow-x:auto}
 table{width:100%;border-collapse:collapse;font-size:13.5px;margin:8px 0 16px}
 th,td{text-align:left;padding:7px 8px;border-bottom:1px solid var(--line);vertical-align:top}
+td a,.where a{color:inherit;text-decoration-color:var(--line)}
 td{font-family:ui-monospace,monospace;font-size:12.5px;word-break:break-all}
 th{color:var(--muted);font-weight:600}
 .empty,.limits{color:var(--muted)}
+.snippet{background:var(--card);border:1px solid var(--line);border-radius:8px;padding:10px 12px;font:12.5px ui-monospace,monospace;white-space:pre-wrap;word-break:break-all}
 footer{margin-top:48px;color:var(--muted);font-size:12.5px}
 `;

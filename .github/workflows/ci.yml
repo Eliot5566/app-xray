@@ -23,3 +23,7 @@ jobs:
         run: node dist/cli.js scan test/fixtures/demo-app --out xray-out --quiet && test -s xray-out/report.html
       - name: Reject a missing path with a usage error
         run: node dist/cli.js scan does-not-exist --quiet && exit 1 || test $? -eq 2
+      - name: Build a gallery from the fixture report
+        run: |
+          mkdir -p reports && cp -r xray-out reports/demo-app
+          node dist/cli.js gallery reports --out site --quiet && test -s site/index.html && test -s site/apps/demo-app/index.html

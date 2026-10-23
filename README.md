@@ -40,9 +40,23 @@ Output in `xray-out/`:
 - `card.png` and `card.svg`: a 1200×630 summary image for social posts
 - `badge.svg`: a README badge, e.g. `app x-ray | 2 high`
 
+## Gallery
+
+The public gallery at <https://eliot5566.github.io/app-xray/> lists reports for
+the open-source apps in `bench/corpus.json`. Each report links every finding to
+the exact line on GitHub, and each page has a link preview image and a README badge
+snippet for the app's maintainers. The `gallery` workflow rebuilds it every Monday.
+
+Build it locally from any folder of scan outputs:
+
+```bash
+npm run bench                                   # scans the corpus into bench-out/
+node dist/cli.js gallery bench-out --out site   # writes site/index.html
+```
+
 To work on App X-Ray itself: `npm install`, `npm test`, `node dist/cli.js scan …`.
 
-## What it checks today (v0.5)
+## What it checks today (v0.6)
 
 | Rule | What it reports |
 | --- | --- |
@@ -98,7 +112,7 @@ The summary card bundles the [Inter](https://github.com/rsms/inter) typeface
 
 App X-Ray 用 REA 分析桌面 App，輸出一頁可分享的 HTML 報告、一張可貼到社群的摘要圖卡（card.png）和 README 徽章，內容包括框架與版本、該版本是否仍有安全更新、內嵌的分析／追蹤服務、連線網域，以及視窗安全設定。每一項都標出它來自哪個檔案的哪一行。
 
-用法：`npx github:Eliot5566/app-xray scan <App 路徑>`。路徑可以是 Windows／Linux 的安裝資料夾、macOS 的 .app、app.asar，或原始碼資料夾。
+用法：`npx github:Eliot5566/app-xray scan <App 路徑>`。開源 App 的報告圖鑑在 <https://eliot5566.github.io/app-xray/>，每週一自動更新。路徑可以是 Windows／Linux 的安裝資料夾、macOS 的 .app、app.asar，或原始碼資料夾。
 
 只做靜態分析，不會執行目標 App。請只分析自己擁有或有權檢查的軟體。
 
