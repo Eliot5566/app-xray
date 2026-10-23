@@ -13,20 +13,36 @@ It is built on [REA (Reverse Engineer Anything)](https://github.com/morluto/rea)
 which does the analysis. App X-Ray turns REA's evidence into something anyone can
 read.
 
+No install step needed (Node.js 22 or newer):
+
 ```bash
-npm install
-npm run build
-node dist/cli.js scan /path/to/app --out xray-out
+npx github:Eliot5566/app-xray scan /path/to/app
 # open xray-out/report.html
 ```
 
-`<app-path>` can be an unpacked app directory or an `app.asar`. Output:
+`/path/to/app` can be any of these:
 
-- `xray-out/xray.json`: the facts and findings (schema `app-xray/report@0`)
-- `xray-out/report.html`: one self-contained page you can share
-- `xray-out/card.svg`: a 1200×630 summary image for posts and READMEs
+| You have | Point xray at |
+| --- | --- |
+| An installed app on Windows or Linux | its install folder, e.g. `C:\Program Files\Signal` |
+| An installed app on macOS | the bundle, e.g. `/Applications/Signal.app` |
+| An `app.asar` | the file itself |
+| A source checkout | the app's folder in the repo |
 
-## What it checks today (v0.4)
+For an installed app, only the app inside it (`resources/app.asar` or
+`resources/app`) is analyzed, not Electron itself; the Electron and Chromium
+versions and the fuses are read from the executable.
+
+Output in `xray-out/`:
+
+- `xray.json`: the facts and findings (schema `app-xray/report@0`)
+- `report.html`: one self-contained page you can share
+- `card.png` and `card.svg`: a 1200×630 summary image for social posts
+- `badge.svg`: a README badge, e.g. `app x-ray | 2 high`
+
+To work on App X-Ray itself: `npm install`, `npm test`, `node dist/cli.js scan …`.
+
+## What it checks today (v0.5)
 
 | Rule | What it reports |
 | --- | --- |
@@ -75,9 +91,14 @@ Analyze only software you own or are authorized to examine, and follow REA's
 [disclaimer](https://github.com/morluto/rea/blob/main/DISCLAIMER.md). Reports
 describe components and facts; they never include the app's code.
 
+The summary card bundles the [Inter](https://github.com/rsms/inter) typeface
+(`data/fonts`, SIL Open Font License 1.1).
+
 ## 中文說明
 
-App X-Ray 用 REA 分析桌面 App，輸出一頁可分享的 HTML 報告和一張可貼到社群的摘要圖卡（card.svg），內容包括框架與版本、該版本是否仍有安全更新、內嵌的分析／追蹤服務、連線網域，以及視窗安全設定。每一項都標出它來自哪個檔案的哪一行。
+App X-Ray 用 REA 分析桌面 App，輸出一頁可分享的 HTML 報告、一張可貼到社群的摘要圖卡（card.png）和 README 徽章，內容包括框架與版本、該版本是否仍有安全更新、內嵌的分析／追蹤服務、連線網域，以及視窗安全設定。每一項都標出它來自哪個檔案的哪一行。
+
+用法：`npx github:Eliot5566/app-xray scan <App 路徑>`。路徑可以是 Windows／Linux 的安裝資料夾、macOS 的 .app、app.asar，或原始碼資料夾。
 
 只做靜態分析，不會執行目標 App。請只分析自己擁有或有權檢查的軟體。
 

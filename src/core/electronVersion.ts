@@ -14,9 +14,9 @@ const SEMVER = /^\d+\.\d+\.\d+(?:-[0-9A-Za-z.-]+)?$/;
 /**
  * Finds the Electron version an app ships with, from the cheapest reliable source:
  *  1. package.json dependencies (unpacked source trees)
- *  2. macOS: Electron Framework's Info.plist
- *  3. the user-agent string compiled into the app's executable (Windows/Linux packages),
- *     which also names the bundled Chromium
+ *  2. the user-agent string compiled into the app's executable (Windows/Linux packages) or
+ *     Electron Framework (macOS), which also names the bundled Chromium
+ *  3. macOS: Electron Framework's Info.plist
  *  4. the `version` file Electron distributions carry beside the executable
  * Returns null when none of these is present; the caller reports that as unknown.
  */
@@ -24,8 +24,8 @@ export async function detectElectronVersion(appPath: string): Promise<VersionHit
   const root = path.resolve(appPath);
   return (
     (await fromPackageJson(root)) ??
-    (await fromMacFramework(root)) ??
     (await fromExecutable(root)) ??
+    (await fromMacFramework(root)) ??
     (await fromVersionFile(root))
   );
 }
@@ -97,8 +97,16 @@ async function fromExecutable(root: string, minBytes = MIN_EXECUTABLE_BYTES): Pr
 /**
  * The install directory is the one holding `resources/`; the app may be given as that directory,
  * as resources/, or as resources/app(.asar). Largest files first: the Electron executable dominates.
+ * Inside a macOS .app bundle the candidate is the Electron Framework binary.
  */
 export async function candidateExecutables(root: string, minBytes = MIN_EXECUTABLE_BYTES): Promise<string[]> {
+  // macOS: the fuse wire and the user-agent string live in the framework, not in Contents/MacOS.
+  const contents = macContentsDir(root);
+  if (contents) {
+    const framework = path.join(contents, "Frameworks", "Electron Framework.framework", "Electron Framework");
+    const size = await stat(framework).then((s) => s.size, () => 0);
+    return size >= minBytes ? [framework] : [];
+  }
   const dirs = [root, path.dirname(root), path.dirname(path.dirname(root))];
   for (const dir of dirs) {
     let entries;

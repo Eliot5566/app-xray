@@ -25,7 +25,7 @@ export function renderCard(report: XrayReport): string {
     [report.endpoints.length, `endpoints · ${hosts} host${hosts === 1 ? "" : "s"}`],
     [services, services === 1 ? "known tracker or SDK" : "known trackers / SDKs"],
     [report.remotePages.length, report.remotePages.length === 1 ? "remote page shown" : "remote pages shown"],
-    [report.ipcChannels.length, "IPC channels"],
+    [report.ipcChannels.length, report.ipcChannels.length === 1 ? "IPC channel" : "IPC channels"],
   ];
 
   const counts = { high: 0, medium: 0, low: 0, info: 0 };
@@ -61,7 +61,7 @@ export function renderCard(report: XrayReport): string {
     : `<text x="64" y="472" font-size="22" fill="#6b675f">No high, medium or low findings.</text>`;
 
   const date = report.generatedAt.slice(0, 10);
-  return `<svg xmlns="http://www.w3.org/2000/svg" width="${W}" height="${H}" viewBox="0 0 ${W} ${H}" font-family="system-ui, -apple-system, 'Segoe UI', Helvetica, Arial, sans-serif" role="img" aria-label="${esc(`App X-Ray summary for ${name}`)}">
+  return `<svg xmlns="http://www.w3.org/2000/svg" width="${W}" height="${H}" viewBox="0 0 ${W} ${H}" font-family="Inter, system-ui, -apple-system, 'Segoe UI', Helvetica, Arial, sans-serif" role="img" aria-label="${esc(`App X-Ray summary for ${name}`)}">
 <rect width="${W}" height="${H}" fill="#fbfaf7"/>
 <rect width="${W}" height="8" fill="${COLORS[ORDER.find((s) => s !== "info" && counts[s] > 0) ?? "info"]}"/>
 <text x="64" y="76" font-size="20" font-weight="600" letter-spacing="3" fill="#6b675f">APP X-RAY</text>

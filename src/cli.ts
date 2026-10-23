@@ -1,7 +1,8 @@
 #!/usr/bin/env node
-import { mkdir, readFile, writeFile } from "node:fs/promises";
+import { mkdir, readFile, stat, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { parseArgs } from "node:util";
+import { listSourceFiles } from "./core/batches.js";
 import { candidateExecutables, detectElectronVersion } from "./core/electronVersion.js";
 import { normalize } from "./core/normalize.js";
 import { prepareScope } from "./core/sourceScope.js";
@@ -13,14 +14,16 @@ import {
   ReaError,
 } from "./core/rea.js";
 import type { FuseState } from "./core/schema.js";
+import { renderBadge } from "./report/badge.js";
 import { renderCard } from "./report/card.js";
 import { renderHtml } from "./report/html.js";
+import { renderPng } from "./report/png.js";
 import { applyRules } from "./rules/index.js";
 
 const USAGE = `Usage: xray scan <app-path> [--out <dir>] [--rea-json <file>] [--all-files] [--quiet]
 
-  <app-path>         An unpacked app directory, app.asar or .app bundle resources folder
-  --out <dir>        Where to write xray.json, report.html and card.svg (default: ./xray-out)
+  <app-path>         An installed app folder or .app bundle, an app.asar, or a source checkout
+  --out <dir>        Where to write the report files (default: ./xray-out)
   --rea-json <file>  Reuse a saved "rea analyze-javascript-application --json" result
   --all-files        In a source checkout, also analyze tests, stories and build tooling
   --quiet            No progress output`;
@@ -53,7 +56,20 @@ async function main(argv: string[]): Promise<number> {
     log(`warning: app-xray is tested with rea-agents ${PINNED_REA_VERSION}, found ${reaVersion}`);
   }
 
+  const targetStat = await stat(target).catch(() => null);
+  if (!targetStat) throw new UsageError(`No such file or directory: ${target}`);
+
   const scope = values["rea-json"] ? null : await prepareScope(target, { allFiles: values["all-files"] });
+  if (scope?.payload) log(`packaged app: analyzing ${scope.payload}`);
+  if (scope && !scope.analyzedPath.endsWith(".asar")) {
+    if (!targetStat.isDirectory()) {
+      throw new UsageError(`${target} is not a folder or an .asar file. Point xray at an installed app folder, an app.asar, or a source checkout.`);
+    }
+    if ((await listSourceFiles(scope.analyzedPath)).length === 0) {
+      await scope.cleanup();
+      throw new UsageError(`No JavaScript or HTML files found in ${target}. Point xray at an installed app folder, an app.asar, or a source checkout.`);
+    }
+  }
   if (scope?.filtered) log(`source checkout: leaving out ${scope.excludedFiles} test, story, tooling and generated files`);
   let evidence: unknown;
   try {
@@ -74,13 +90,20 @@ async function main(argv: string[]): Promise<number> {
   await mkdir(outDir, { recursive: true });
   await writeFile(path.join(outDir, "xray.json"), `${JSON.stringify(report, null, 2)}\n`);
   await writeFile(path.join(outDir, "report.html"), renderHtml(report));
-  await writeFile(path.join(outDir, "card.svg"), renderCard(report));
+  const card = renderCard(report);
+  await writeFile(path.join(outDir, "card.svg"), card);
+  const png = await renderPng(card);
+  if (png) await writeFile(path.join(outDir, "card.png"), png);
+  else log("note: card.png skipped (the optional @resvg/resvg-js renderer is not installed)");
+  await writeFile(path.join(outDir, "badge.svg"), renderBadge(report));
 
   const high = report.findings.filter((f) => f.severity === "high").length;
   log(`${report.target.name ?? target}: ${report.findings.length} findings (${high} high)`);
   log(`wrote ${path.join(outDir, "report.html")}`);
   return 0;
 }
+
+class UsageError extends Error {}
 
 async function readFuses(target: string, log: (msg: string) => void): Promise<FuseState[] | null> {
   const [executable] = await candidateExecutables(path.resolve(target));
@@ -97,10 +120,12 @@ main(process.argv.slice(2)).then(
   (code) => process.exit(code),
   (err: unknown) => {
     if (err instanceof ReaError) {
-      console.error(`${err.message}\n${err.stderr.split("\n").slice(-5).join("\n")}`);
+      // Progress lines are JSON; anything else on stderr is worth showing.
+      const extra = err.stderr.split("\n").filter((l) => l.trim() && !l.trim().startsWith("{")).slice(-5);
+      console.error([err.message, ...extra].join("\n"));
     } else {
       console.error(err instanceof Error ? err.message : err);
     }
-    process.exit(1);
+    process.exit(err instanceof UsageError ? 2 : 1);
   },
 );
