@@ -62,13 +62,30 @@ export async function runRea(args: string[], onProgress?: (message: string) => v
   });
 
   if (exitCode !== 0) {
-    throw new ReaError(`rea ${args[0]} exited with code ${exitCode}`, exitCode, stderr);
+    throw new ReaError(failureMessage(args[0]!, exitCode, Buffer.concat(stdout).toString("utf8")), exitCode, stderr);
   }
   try {
     return JSON.parse(Buffer.concat(stdout).toString("utf8"));
   } catch {
     throw new ReaError(`rea ${args[0]} did not return JSON`, exitCode, stderr);
   }
+}
+
+// On failure REA still prints one JSON object on stdout, with a message and usually a remediation.
+export function failureMessage(command: string, exitCode: number | null, stdout: string): string {
+  try {
+    const err = JSON.parse(stdout) as {
+      message?: string;
+      remediation?: { action?: string };
+      details?: { issues?: Array<{ message?: string }> };
+    };
+    const detail = err.details?.issues?.map((i) => i.message).filter(Boolean).join("; ");
+    const parts = [...new Set([detail || err.message, err.remediation?.action].filter(Boolean))];
+    if (parts.length) return `rea ${command} failed: ${parts.join(" ")}`;
+  } catch {
+    // Not JSON: fall through to the exit code.
+  }
+  return `rea ${command} exited with code ${exitCode}`;
 }
 
 function progressMessage(line: string): string | null {

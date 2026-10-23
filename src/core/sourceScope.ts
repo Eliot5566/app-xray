@@ -32,8 +32,10 @@ const LOCKFILES = ["package-lock.json", "yarn.lock", "pnpm-lock.yaml", "bun.lock
 const SEARCH_LEVELS = 3;
 
 export interface Scope {
-  /** Path handed to REA: the original, or a filtered copy. */
+  /** Path handed to REA: the original, a filtered copy, or a packaged app's payload. */
   analyzedPath: string;
+  /** For a packaged app, the payload inside it that was analyzed, relative to the input. */
+  payload: string | null;
   filtered: boolean;
   excludedFiles: number;
   cleanup(): Promise<void>;
@@ -66,10 +68,37 @@ export function isExcluded(relativePath: string, isDir: boolean): boolean {
   return EXCLUDED_FILES.test(name);
 }
 
+// Where Electron keeps the app inside a packaged install, relative to the folder a user is likely
+// to point at: the install folder (Windows, Linux), the .app bundle, its Contents, or resources.
+// Everything else there is Electron itself; its default_app.asar would otherwise add Electron's
+// own modules and addresses to the report.
+const PAYLOADS = [
+  "resources/app.asar",
+  "resources/app",
+  "Contents/Resources/app.asar",
+  "Contents/Resources/app",
+  "Resources/app.asar",
+  "Resources/app",
+  "app.asar",
+];
+
+/** The app payload inside a packaged Electron install, or null when `root` is not one. */
+export async function findPayload(root: string): Promise<string | null> {
+  for (const rel of PAYLOADS) {
+    const candidate = path.join(root, rel);
+    if (await exists(candidate)) return candidate;
+  }
+  return null;
+}
+
 export async function prepareScope(appPath: string, { allFiles = false } = {}): Promise<Scope> {
   const source = path.resolve(appPath);
+  const unchanged = { analyzedPath: source, payload: null, filtered: false, excludedFiles: 0, cleanup: async () => {} };
+  if (!(await isDirectory(source))) return unchanged;
   if (allFiles || !(await isSourceCheckout(source))) {
-    return { analyzedPath: source, filtered: false, excludedFiles: 0, cleanup: async () => {} };
+    const payload = await findPayload(source);
+    if (!payload) return unchanged;
+    return { ...unchanged, analyzedPath: payload, payload: path.relative(source, payload).split(path.sep).join("/") };
   }
 
   const staging = await mkdtemp(path.join(os.tmpdir(), "app-xray-scope-"));
@@ -90,6 +119,7 @@ export async function prepareScope(appPath: string, { allFiles = false } = {}): 
   });
   return {
     analyzedPath: target,
+    payload: null,
     filtered: true,
     excludedFiles,
     cleanup: () => rm(staging, { recursive: true, force: true }),
@@ -108,6 +138,13 @@ async function isDirectory(p: string): Promise<boolean> {
   } catch {
     return false;
   }
+}
+
+async function exists(p: string): Promise<boolean> {
+  return stat(p).then(
+    () => true,
+    () => false,
+  );
 }
 
 async function countFiles(dir: string): Promise<number> {

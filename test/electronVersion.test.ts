@@ -2,7 +2,7 @@ import { mkdtemp, mkdir, open, rm, writeFile } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
-import { MIN_EXECUTABLE_BYTES, detectElectronVersion } from "../src/core/electronVersion.js";
+import { MIN_EXECUTABLE_BYTES, candidateExecutables, detectElectronVersion } from "../src/core/electronVersion.js";
 
 // A packaged Linux/Windows layout: <install>/<exe> + <install>/resources/app/.
 // The executable is a sparse file with the user-agent literal near its end, as in a real build.
@@ -54,5 +54,33 @@ describe("electron version in a monorepo", () => {
     } finally {
       await rm(repo, { recursive: true, force: true });
     }
+  });
+});
+
+describe("macOS bundles", () => {
+  let bundle: string;
+  const framework = () => path.join(bundle, "Contents", "Frameworks", "Electron Framework.framework", "Electron Framework");
+
+  beforeAll(async () => {
+    bundle = path.join(await mkdtemp(path.join(os.tmpdir(), "xray-mac-")), "Demo.app");
+    await mkdir(path.dirname(framework()), { recursive: true });
+    await mkdir(path.join(bundle, "Contents", "Resources"), { recursive: true });
+    await writeFile(path.join(bundle, "Contents", "Resources", "app.asar"), "");
+    const bin = await open(framework(), "w");
+    await bin.write(Buffer.from("\0Chrome/156.0.8078.48 Electron/45.0.0\0", "latin1"), 0, undefined, MIN_EXECUTABLE_BYTES + 3);
+    await bin.close();
+  });
+
+  afterAll(async () => {
+    await rm(path.dirname(bundle), { recursive: true, force: true });
+  });
+
+  it("reads fuses and versions from Electron Framework", async () => {
+    expect(await candidateExecutables(path.join(bundle, "Contents", "Resources", "app.asar"))).toEqual([framework()]);
+    expect(await detectElectronVersion(bundle)).toEqual({
+      version: "45.0.0",
+      chromium: "156.0.8078.48",
+      source: "Electron Framework user-agent string",
+    });
   });
 });
