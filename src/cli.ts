@@ -13,7 +13,8 @@ import {
   PINNED_REA_VERSION,
   ReaError,
 } from "./core/rea.js";
-import type { FuseState } from "./core/schema.js";
+import type { FuseState, XrayReport } from "./core/schema.js";
+import { diffReports, FAIL_CONDITIONS, failures, isEmptyDiff, renderMarkdown, type FailCondition } from "./diff.js";
 import { buildGallery } from "./gallery.js";
 import { renderBadge } from "./report/badge.js";
 import { renderCard } from "./report/card.js";
@@ -23,6 +24,7 @@ import { applyRules } from "./rules/index.js";
 
 const USAGE = `Usage: xray scan <app-path> [--out <dir>] [--rea-json <file>] [--all-files] [--quiet]
        xray gallery <reports-dir> [--out <dir>] [--base-url <url>]
+       xray diff <before> <after> [--format md|json] [--fail-on <conditions>]
 
 scan
   <app-path>         An installed app folder or .app bundle, an app.asar, or a source checkout
@@ -34,7 +36,12 @@ scan
 gallery
   <reports-dir>      Folder of scan outputs (<name>/xray.json), e.g. from npm run bench
   --out <dir>        Where to write the static site (default: ./site)
-  --base-url <url>   Public URL of the site, for link previews and README badges`;
+  --base-url <url>   Public URL of the site, for link previews and README badges
+
+diff
+  <before> <after>   Two xray.json files, or the folders that hold them
+  --format <fmt>     md (default, for pull request comments) or json
+  --fail-on <list>   Exit with code 1 on any of: ${FAIL_CONDITIONS.join(", ")}`;
 
 async function main(argv: string[]): Promise<number> {
   const { positionals, values } = parseArgs({
@@ -43,6 +50,8 @@ async function main(argv: string[]): Promise<number> {
     options: {
       out: { type: "string" },
       "base-url": { type: "string" },
+      format: { type: "string", default: "md" },
+      "fail-on": { type: "string" },
       "rea-json": { type: "string" },
       "all-files": { type: "boolean", default: false },
       quiet: { type: "boolean", default: false },
@@ -51,9 +60,23 @@ async function main(argv: string[]): Promise<number> {
   });
 
   const [command, target] = positionals;
-  if (values.help || (command !== "scan" && command !== "gallery") || !target) {
+  if (values.help || !["scan", "gallery", "diff"].includes(command ?? "") || !target) {
     console.log(USAGE);
     return values.help ? 0 : 2;
+  }
+
+  if (command === "diff") {
+    const afterPath = positionals[2];
+    if (!afterPath) throw new UsageError("xray diff needs two reports: <before> <after>");
+    const conditions = (values["fail-on"] ?? "").split(",").map((c) => c.trim()).filter(Boolean);
+    const unknown = conditions.filter((c) => !(FAIL_CONDITIONS as readonly string[]).includes(c));
+    if (unknown.length) throw new UsageError(`Unknown --fail-on condition: ${unknown.join(", ")}. Use: ${FAIL_CONDITIONS.join(", ")}`);
+    if (values.format !== "md" && values.format !== "json") throw new UsageError("--format must be md or json");
+    const d = diffReports(await readReport(target), await readReport(afterPath));
+    process.stdout.write(values.format === "json" ? `${JSON.stringify({ changed: !isEmptyDiff(d), ...d }, null, 2)}\n` : renderMarkdown(d));
+    const failed = failures(d, conditions as FailCondition[]);
+    for (const f of failed) process.stderr.write(`xray diff: ${f}\n`);
+    return failed.length ? 1 : 0;
   }
 
   if (command === "gallery") {
@@ -121,6 +144,17 @@ async function main(argv: string[]): Promise<number> {
 }
 
 class UsageError extends Error {}
+
+async function readReport(p: string): Promise<XrayReport> {
+  const s = await stat(p).catch(() => null);
+  if (!s) throw new UsageError(`No such file or directory: ${p}`);
+  const file = s.isDirectory() ? path.join(p, "xray.json") : p;
+  try {
+    return JSON.parse(await readFile(file, "utf8")) as XrayReport;
+  } catch (err) {
+    throw new UsageError(`Could not read an xray report from ${file}: ${err instanceof Error ? err.message : err}`);
+  }
+}
 
 async function readFuses(target: string, log: (msg: string) => void): Promise<FuseState[] | null> {
   const [executable] = await candidateExecutables(path.resolve(target));
