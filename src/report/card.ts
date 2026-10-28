@@ -15,19 +15,29 @@ export function renderCard(report: XrayReport): string {
   const electron = report.frameworks.find((f) => f.kind === "electron");
   const support = report.findings.find((f) => f.ruleId === "electron-support");
   const android = report.android;
+  const native = report.native;
   const subtitle = android
     ? androidSubtitle(report)
-    : electron
+    : native
+      ? nativeSubtitle(report)
+      : electron
       ? `Electron ${electron.version ?? "version unknown"}${support && electron.version ? ` · ${supportNote(support)}` : ""}`
       : "Framework not identified";
 
   const hosts = new Set(report.endpoints.flatMap((e) => (e.host ? [e.host] : []))).size;
   const services = report.findings.filter((f) => f.ruleId === "known-services" || f.ruleId === "android-sdks").length;
-  const stats: Array<[number, string]> = [
+  const stats: Array<[number | string, string]> = [
     // Most endpoints are paths or computed URLs, so the named hosts are counted separately.
     [report.endpoints.length, `endpoints · ${hosts} host${hosts === 1 ? "" : "s"}`],
     [services, services === 1 ? "known tracker or SDK" : "known trackers / SDKs"],
-    ...((android
+    ...((native
+      ? [
+          [report.dependencies?.length ?? 0, native.language === "rust" ? "crates" : "modules"],
+          report.vulnerabilities
+            ? [report.vulnerabilities.length, report.vulnerabilities.length === 1 ? "known vulnerability" : "known vulnerabilities"]
+            : ["—", "CVEs not checked"],
+        ]
+      : android
       ? [
           [android.sensitivePermissions.length, android.sensitivePermissions.length === 1 ? "sensitive permission" : "sensitive permissions"],
           [android.components.exported, android.components.exported === 1 ? "open component" : "open components"],
@@ -35,7 +45,7 @@ export function renderCard(report: XrayReport): string {
       : [
           [report.remotePages.length, report.remotePages.length === 1 ? "remote page shown" : "remote pages shown"],
           [report.ipcChannels.length, report.ipcChannels.length === 1 ? "IPC channel" : "IPC channels"],
-        ]) as Array<[number, string]>),
+        ]) as Array<[number | string, string]>),
   ];
 
   const counts = { high: 0, medium: 0, low: 0, info: 0 };
@@ -100,6 +110,17 @@ const FRAMEWORK_NAMES: Partial<Record<string, string>> = {
   cordova: "Cordova",
   capacitor: "Capacitor",
 };
+
+/** "Go 1.26.1 · linux/amd64 · ELF" */
+export function nativeSubtitle(report: XrayReport): string {
+  const n = report.native!;
+  const lang = report.frameworks.find((f) => f.kind === "go" || f.kind === "rust");
+  const parts = [lang ? `${lang.kind === "go" ? "Go" : "Rust"}${lang.version ? ` ${lang.version}` : ""}` : "Native executable"];
+  const os = n.buildSettings["GOOS"];
+  if (os || n.architecture) parts.push([os, n.architecture].filter(Boolean).join("/"));
+  parts.push(n.format === "macho" ? "Mach-O" : n.format.toUpperCase());
+  return parts.join(" · ");
+}
 
 /** "Android · targets API 33 · min API 21 · Flutter" */
 export function androidSubtitle(report: XrayReport): string {

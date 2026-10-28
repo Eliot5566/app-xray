@@ -29,6 +29,7 @@ npx github:Eliot5566/app-xray scan /path/to/app
 | An `app.asar` | the file itself |
 | A source checkout | the app's folder in the repo |
 | An Android app | the `.apk` file |
+| A Go or Rust program | the executable (ELF, PE or Mach-O) |
 
 For an installed app, only the app inside it (`resources/app.asar` or
 `resources/app`) is analyzed, not Electron itself; the Electron and Chromium
@@ -104,6 +105,29 @@ React Native, Unity, Xamarin, Cordova or Capacitor. Code that runs outside DEX
 can hide SDKs by renaming their classes; the report says so. Split APKs and
 `.aab` bundles are not supported yet.
 
+## Go and Rust executables
+
+Point `xray scan` at a compiled program. Go binaries carry their module list and
+build settings, and Rust binaries built with
+[cargo-auditable](https://github.com/rust-secure-code/cargo-auditable) carry their
+crate list; REA reads both (`inspect-go-binary`, `inspect-rust-binary`).
+
+| Rule | What it reports |
+| --- | --- |
+| `go-support` | The Go toolchain version, and whether that release still gets security fixes (`data/go-releases.json`) |
+| `go-build` | Built from uncommitted changes, cgo in use, and modules replaced with forks or local copies |
+| `known-vulnerabilities` | With `--osv`: libraries (and the Go standard library) whose exact version has an advisory in [OSV](https://osv.dev) |
+
+```bash
+xray scan ./mytool --osv
+```
+
+`--osv` sends package names and versions, nothing else, to `api.osv.dev`. Without
+it the scan stays offline and the report says vulnerabilities were not checked.
+Literal URLs are also read from the binary's bytes, so `known-services` works here
+too. Binaries without Go build info or cargo-auditable data still get an address
+list, and the report says the libraries are unknown.
+
 ## Limits
 
 - Static analysis only. The app is never run. A finding means the code *contains*
@@ -130,9 +154,9 @@ The summary card bundles the [Inter](https://github.com/rsms/inter) typeface
 
 ## 中文說明
 
-App X-Ray 用 REA 分析桌面 App，輸出一頁可分享的 HTML 報告、一張可貼到社群的摘要圖卡（card.png）和 README 徽章，內容包括框架與版本、該版本是否仍有安全更新、內嵌的分析／追蹤服務、連線網域，以及視窗安全設定。每一項都標出它來自哪個檔案的哪一行。
+App X-Ray 用 REA 分析桌面 App，輸出一頁可分享的 HTML 報告、一張可貼到社群的摘要圖卡（card.png）和 README 徽章，內容包括框架與版本、該版本是否仍有安全更新、內嵌的分析／追蹤服務、連線網域，以及視窗安全設定。Go／Rust 執行檔會列出內含的函式庫與版本、Go 版本是否仍受支援；加上 `--osv` 會查詢 OSV 弱點資料庫（只送出套件名稱與版本）。每一項都標出它來自哪個檔案的哪一行。
 
-用法：`npx github:Eliot5566/app-xray scan <App 路徑>`。開源 App 的報告圖鑑在 <https://eliot5566.github.io/app-xray/>，每週一自動更新。路徑可以是 Windows／Linux 的安裝資料夾、macOS 的 .app、app.asar、原始碼資料夾，或 Android 的 .apk 檔。APK 不需要 Java，會列出權限、內嵌的分析／廣告／錯誤回報 SDK、程式中的網址，以及 debuggable、明文 HTTP、目標 API 版本等設定。
+用法：`npx github:Eliot5566/app-xray scan <App 路徑>`。開源 App 的報告圖鑑在 <https://eliot5566.github.io/app-xray/>，每週一自動更新。路徑可以是 Windows／Linux 的安裝資料夾、macOS 的 .app、app.asar、原始碼資料夾，Android 的 .apk 檔，或 Go／Rust 編譯出的執行檔。APK 不需要 Java，會列出權限、內嵌的分析／廣告／錯誤回報 SDK、程式中的網址，以及 debuggable、明文 HTTP、目標 API 版本等設定。
 
 只做靜態分析，不會執行目標 App。請只分析自己擁有或有權檢查的軟體。
 

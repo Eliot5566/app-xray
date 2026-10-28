@@ -12,10 +12,10 @@ function ruleFindings(id: string, patch: Partial<XrayReport>) {
 }
 
 describe("rule set", () => {
-  it("has thirteen rules with unique ids", () => {
+  it("has sixteen rules with unique ids", () => {
     const ids = defaultRules().map((r) => r.id);
-    expect(ids).toHaveLength(13);
-    expect(new Set(ids).size).toBe(13);
+    expect(ids).toHaveLength(16);
+    expect(new Set(ids).size).toBe(16);
   });
 });
 
