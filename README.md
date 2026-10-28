@@ -138,6 +138,9 @@ review and extend.
 `bench/corpus.json` lists 20 open-source Electron apps. `npm run bench` clones
 each one, scans it and writes `bench-out/summary.md` with timings and findings.
 
+[REA-Bench](bench/rea-bench/) turns those reports into questions for coding agents
+about the same apps and grades the answers, to compare agents with and without REA.
+
 ## Responsible use
 
 Analyze only software you own or are authorized to examine, and follow REA's
@@ -151,7 +154,7 @@ The summary card bundles the [Inter](https://github.com/rsms/inter) typeface
 
 App X-Ray 用 REA 分析桌面 App，輸出一頁可分享的 HTML 報告、一張可貼到社群的摘要圖卡（card.png）和 README 徽章，內容包括框架與版本、該版本是否仍有安全更新、內嵌的分析／追蹤服務、連線網域，以及視窗安全設定。每一項都標出它來自哪個檔案的哪一行。
 
-用法：`npx github:Eliot5566/app-xray scan <App 路徑>`。`xray diff` 可以比較兩個版本，列出新增的連線網域、套件、追蹤服務與安全設定變化；也可以當 GitHub Action 使用，在每個 PR 自動留言。開源 App 的報告圖鑑在 <https://eliot5566.github.io/app-xray/>，每週一自動更新。路徑可以是 Windows／Linux 的安裝資料夾、macOS 的 .app、app.asar，或原始碼資料夾。
+用法：`npx github:Eliot5566/app-xray scan <App 路徑>`。`xray diff` 可以比較兩個版本，列出新增的連線網域、套件、追蹤服務與安全設定變化；也可以當 GitHub Action 使用，在每個 PR 自動留言。開源 App 的報告圖鑑在 <https://eliot5566.github.io/app-xray/>，每週一自動更新。[REA-Bench](bench/rea-bench/) 用這些報告出題測試 AI 代理人，比較有無 REA 工具的差距。路徑可以是 Windows／Linux 的安裝資料夾、macOS 的 .app、app.asar，或原始碼資料夾。
 
 只做靜態分析，不會執行目標 App。請只分析自己擁有或有權檢查的軟體。
 

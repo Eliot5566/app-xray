@@ -1,0 +1,546 @@
+{
+  "schema": "rea-bench/tasks@0",
+  "seed": "2026-10-28",
+  "tasks": [
+    {
+      "id": "electron-version/signal-desktop",
+      "template": "electron-version",
+      "app": "Signal Desktop",
+      "repo": "signalapp/Signal-Desktop",
+      "commit": "17502b9",
+      "path": ".",
+      "question": "Which exact Electron version does Signal Desktop depend on at this commit? Answer with the version number only, e.g. 33.2.1.",
+      "format": "text"
+    },
+    {
+      "id": "electron-version/youtube-music",
+      "template": "electron-version",
+      "app": "YouTube Music Desktop",
+      "repo": "th-ch/youtube-music",
+      "commit": "7c55260",
+      "path": ".",
+      "question": "Which exact Electron version does YouTube Music Desktop depend on at this commit? Answer with the version number only, e.g. 33.2.1.",
+      "format": "text"
+    },
+    {
+      "id": "electron-version/marktext",
+      "template": "electron-version",
+      "app": "MarkText",
+      "repo": "marktext/marktext",
+      "commit": "bfe66ce",
+      "path": ".",
+      "question": "Which exact Electron version does MarkText depend on at this commit? Answer with the version number only, e.g. 33.2.1.",
+      "format": "text"
+    },
+    {
+      "id": "electron-version/insomnia",
+      "template": "electron-version",
+      "app": "Insomnia",
+      "repo": "Kong/insomnia",
+      "commit": "88ae88d",
+      "path": "packages/insomnia",
+      "question": "Which exact Electron version does Insomnia depend on at this commit? Answer with the version number only, e.g. 33.2.1.",
+      "format": "text"
+    },
+    {
+      "id": "electron-version/github-desktop",
+      "template": "electron-version",
+      "app": "GitHub Desktop",
+      "repo": "desktop/desktop",
+      "commit": "04fe64d",
+      "path": "app",
+      "question": "Which exact Electron version does GitHub Desktop depend on at this commit? Answer with the version number only, e.g. 33.2.1.",
+      "format": "text"
+    },
+    {
+      "id": "electron-version/stretchly",
+      "template": "electron-version",
+      "app": "Stretchly",
+      "repo": "hovancik/stretchly",
+      "commit": "9aeb504",
+      "path": ".",
+      "question": "Which exact Electron version does Stretchly depend on at this commit? Answer with the version number only, e.g. 33.2.1.",
+      "format": "text"
+    },
+    {
+      "id": "electron-version/beekeeper-studio",
+      "template": "electron-version",
+      "app": "Beekeeper Studio",
+      "repo": "beekeeper-studio/beekeeper-studio",
+      "commit": "3407432",
+      "path": "apps/studio",
+      "question": "Which exact Electron version does Beekeeper Studio depend on at this commit? Answer with the version number only, e.g. 33.2.1.",
+      "format": "text"
+    },
+    {
+      "id": "electron-version/zettlr",
+      "template": "electron-version",
+      "app": "Zettlr",
+      "repo": "Zettlr/Zettlr",
+      "commit": "8822a1c",
+      "path": ".",
+      "question": "Which exact Electron version does Zettlr depend on at this commit? Answer with the version number only, e.g. 33.2.1.",
+      "format": "text"
+    },
+    {
+      "id": "electron-version/standard-notes",
+      "template": "electron-version",
+      "app": "Standard Notes",
+      "repo": "standardnotes/app",
+      "commit": "8929036",
+      "path": "packages/desktop",
+      "question": "Which exact Electron version does Standard Notes depend on at this commit? Answer with the version number only, e.g. 33.2.1.",
+      "format": "text"
+    },
+    {
+      "id": "electron-supported/webtorrent-desktop",
+      "template": "electron-supported",
+      "app": "WebTorrent Desktop",
+      "repo": "webtorrent/webtorrent-desktop",
+      "commit": "6c91af3",
+      "path": ".",
+      "question": "Was the Electron version WebTorrent Desktop uses at this commit still inside Electron's supported window (the latest three major releases) on 2026-10-22? Answer yes or no.",
+      "format": "yes-no"
+    },
+    {
+      "id": "electron-supported/zettlr",
+      "template": "electron-supported",
+      "app": "Zettlr",
+      "repo": "Zettlr/Zettlr",
+      "commit": "8822a1c",
+      "path": ".",
+      "question": "Was the Electron version Zettlr uses at this commit still inside Electron's supported window (the latest three major releases) on 2026-10-22? Answer yes or no.",
+      "format": "yes-no"
+    },
+    {
+      "id": "electron-supported/ferdium",
+      "template": "electron-supported",
+      "app": "Ferdium",
+      "repo": "ferdium/ferdium-app",
+      "commit": "764f82f",
+      "path": ".",
+      "question": "Was the Electron version Ferdium uses at this commit still inside Electron's supported window (the latest three major releases) on 2026-10-22? Answer yes or no.",
+      "format": "yes-no"
+    },
+    {
+      "id": "electron-supported/insomnia",
+      "template": "electron-supported",
+      "app": "Insomnia",
+      "repo": "Kong/insomnia",
+      "commit": "88ae88d",
+      "path": "packages/insomnia",
+      "question": "Was the Electron version Insomnia uses at this commit still inside Electron's supported window (the latest three major releases) on 2026-10-22? Answer yes or no.",
+      "format": "yes-no"
+    },
+    {
+      "id": "electron-supported/beekeeper-studio",
+      "template": "electron-supported",
+      "app": "Beekeeper Studio",
+      "repo": "beekeeper-studio/beekeeper-studio",
+      "commit": "3407432",
+      "path": "apps/studio",
+      "question": "Was the Electron version Beekeeper Studio uses at this commit still inside Electron's supported window (the latest three major releases) on 2026-10-22? Answer yes or no.",
+      "format": "yes-no"
+    },
+    {
+      "id": "electron-supported/github-desktop",
+      "template": "electron-supported",
+      "app": "GitHub Desktop",
+      "repo": "desktop/desktop",
+      "commit": "04fe64d",
+      "path": "app",
+      "question": "Was the Electron version GitHub Desktop uses at this commit still inside Electron's supported window (the latest three major releases) on 2026-10-22? Answer yes or no.",
+      "format": "yes-no"
+    },
+    {
+      "id": "electron-supported/youtube-music",
+      "template": "electron-supported",
+      "app": "YouTube Music Desktop",
+      "repo": "th-ch/youtube-music",
+      "commit": "7c55260",
+      "path": ".",
+      "question": "Was the Electron version YouTube Music Desktop uses at this commit still inside Electron's supported window (the latest three major releases) on 2026-10-22? Answer yes or no.",
+      "format": "yes-no"
+    },
+    {
+      "id": "electron-supported/freetube",
+      "template": "electron-supported",
+      "app": "FreeTube",
+      "repo": "FreeTubeApp/FreeTube",
+      "commit": "834b8af",
+      "path": ".",
+      "question": "Was the Electron version FreeTube uses at this commit still inside Electron's supported window (the latest three major releases) on 2026-10-22? Answer yes or no.",
+      "format": "yes-no"
+    },
+    {
+      "id": "electron-supported/jitsi-meet-electron",
+      "template": "electron-supported",
+      "app": "Jitsi Meet",
+      "repo": "jitsi/jitsi-meet-electron",
+      "commit": "6eea09a",
+      "path": ".",
+      "question": "Was the Electron version Jitsi Meet uses at this commit still inside Electron's supported window (the latest three major releases) on 2026-10-22? Answer yes or no.",
+      "format": "yes-no"
+    },
+    {
+      "id": "node-integration/beekeeper-studio",
+      "template": "node-integration",
+      "app": "Beekeeper Studio",
+      "repo": "beekeeper-studio/beekeeper-studio",
+      "commit": "3407432",
+      "path": "apps/studio",
+      "question": "Does any BrowserWindow that Beekeeper Studio creates set webPreferences.nodeIntegration to true? Answer yes or no.",
+      "format": "yes-no"
+    },
+    {
+      "id": "node-integration/github-desktop",
+      "template": "node-integration",
+      "app": "GitHub Desktop",
+      "repo": "desktop/desktop",
+      "commit": "04fe64d",
+      "path": "app",
+      "question": "Does any BrowserWindow that GitHub Desktop creates set webPreferences.nodeIntegration to true? Answer yes or no.",
+      "format": "yes-no"
+    },
+    {
+      "id": "node-integration/signal-desktop",
+      "template": "node-integration",
+      "app": "Signal Desktop",
+      "repo": "signalapp/Signal-Desktop",
+      "commit": "17502b9",
+      "path": ".",
+      "question": "Does any BrowserWindow that Signal Desktop creates set webPreferences.nodeIntegration to true? Answer yes or no.",
+      "format": "yes-no"
+    },
+    {
+      "id": "node-integration/webtorrent-desktop",
+      "template": "node-integration",
+      "app": "WebTorrent Desktop",
+      "repo": "webtorrent/webtorrent-desktop",
+      "commit": "6c91af3",
+      "path": ".",
+      "question": "Does any BrowserWindow that WebTorrent Desktop creates set webPreferences.nodeIntegration to true? Answer yes or no.",
+      "format": "yes-no"
+    },
+    {
+      "id": "node-integration/electron-quick-start",
+      "template": "node-integration",
+      "app": "Electron Quick Start",
+      "repo": "electron/electron-quick-start",
+      "commit": "95ee397",
+      "path": ".",
+      "question": "Does any BrowserWindow that Electron Quick Start creates set webPreferences.nodeIntegration to true? Answer yes or no.",
+      "format": "yes-no"
+    },
+    {
+      "id": "node-integration/youtube-music",
+      "template": "node-integration",
+      "app": "YouTube Music Desktop",
+      "repo": "th-ch/youtube-music",
+      "commit": "7c55260",
+      "path": ".",
+      "question": "Does any BrowserWindow that YouTube Music Desktop creates set webPreferences.nodeIntegration to true? Answer yes or no.",
+      "format": "yes-no"
+    },
+    {
+      "id": "node-integration/jitsi-meet-electron",
+      "template": "node-integration",
+      "app": "Jitsi Meet",
+      "repo": "jitsi/jitsi-meet-electron",
+      "commit": "6eea09a",
+      "path": ".",
+      "question": "Does any BrowserWindow that Jitsi Meet creates set webPreferences.nodeIntegration to true? Answer yes or no.",
+      "format": "yes-no"
+    },
+    {
+      "id": "node-integration/insomnia",
+      "template": "node-integration",
+      "app": "Insomnia",
+      "repo": "Kong/insomnia",
+      "commit": "88ae88d",
+      "path": "packages/insomnia",
+      "question": "Does any BrowserWindow that Insomnia creates set webPreferences.nodeIntegration to true? Answer yes or no.",
+      "format": "yes-no"
+    },
+    {
+      "id": "node-integration/bitwarden-desktop",
+      "template": "node-integration",
+      "app": "Bitwarden",
+      "repo": "bitwarden/clients",
+      "commit": "dd4d858",
+      "path": "apps/desktop",
+      "question": "Does any BrowserWindow that Bitwarden creates set webPreferences.nodeIntegration to true? Answer yes or no.",
+      "format": "yes-no"
+    },
+    {
+      "id": "window-count/stretchly",
+      "template": "window-count",
+      "app": "Stretchly",
+      "repo": "hovancik/stretchly",
+      "commit": "9aeb504",
+      "path": ".",
+      "question": "How many places in Stretchly's own source code construct a BrowserWindow (count each `new BrowserWindow(...)` call site once)? Answer with a number.",
+      "format": "number"
+    },
+    {
+      "id": "window-count/etcher",
+      "template": "window-count",
+      "app": "balenaEtcher",
+      "repo": "balena-io/etcher",
+      "commit": "dbd6aae",
+      "path": ".",
+      "question": "How many places in balenaEtcher's own source code construct a BrowserWindow (count each `new BrowserWindow(...)` call site once)? Answer with a number.",
+      "format": "number"
+    },
+    {
+      "id": "window-count/bitwarden-desktop",
+      "template": "window-count",
+      "app": "Bitwarden",
+      "repo": "bitwarden/clients",
+      "commit": "dd4d858",
+      "path": "apps/desktop",
+      "question": "How many places in Bitwarden's own source code construct a BrowserWindow (count each `new BrowserWindow(...)` call site once)? Answer with a number.",
+      "format": "number"
+    },
+    {
+      "id": "window-count/ferdium",
+      "template": "window-count",
+      "app": "Ferdium",
+      "repo": "ferdium/ferdium-app",
+      "commit": "764f82f",
+      "path": ".",
+      "question": "How many places in Ferdium's own source code construct a BrowserWindow (count each `new BrowserWindow(...)` call site once)? Answer with a number.",
+      "format": "number"
+    },
+    {
+      "id": "window-count/hyper",
+      "template": "window-count",
+      "app": "Hyper",
+      "repo": "vercel/hyper",
+      "commit": "30ec0a2",
+      "path": ".",
+      "question": "How many places in Hyper's own source code construct a BrowserWindow (count each `new BrowserWindow(...)` call site once)? Answer with a number.",
+      "format": "number"
+    },
+    {
+      "id": "window-count/joplin",
+      "template": "window-count",
+      "app": "Joplin",
+      "repo": "laurent22/joplin",
+      "commit": "280954e",
+      "path": "packages/app-desktop",
+      "question": "How many places in Joplin's own source code construct a BrowserWindow (count each `new BrowserWindow(...)` call site once)? Answer with a number.",
+      "format": "number"
+    },
+    {
+      "id": "window-count/element-desktop",
+      "template": "window-count",
+      "app": "Element",
+      "repo": "element-hq/element-desktop",
+      "commit": "264c591",
+      "path": ".",
+      "question": "How many places in Element's own source code construct a BrowserWindow (count each `new BrowserWindow(...)` call site once)? Answer with a number.",
+      "format": "number"
+    },
+    {
+      "id": "window-count/signal-desktop",
+      "template": "window-count",
+      "app": "Signal Desktop",
+      "repo": "signalapp/Signal-Desktop",
+      "commit": "17502b9",
+      "path": ".",
+      "question": "How many places in Signal Desktop's own source code construct a BrowserWindow (count each `new BrowserWindow(...)` call site once)? Answer with a number.",
+      "format": "number"
+    },
+    {
+      "id": "window-count/freetube",
+      "template": "window-count",
+      "app": "FreeTube",
+      "repo": "FreeTubeApp/FreeTube",
+      "commit": "834b8af",
+      "path": ".",
+      "question": "How many places in FreeTube's own source code construct a BrowserWindow (count each `new BrowserWindow(...)` call site once)? Answer with a number.",
+      "format": "number"
+    },
+    {
+      "id": "ipc-main-channels/joplin",
+      "template": "ipc-main-channels",
+      "app": "Joplin",
+      "repo": "laurent22/joplin",
+      "commit": "280954e",
+      "path": "packages/app-desktop",
+      "question": "List every IPC channel name that Joplin's main process listens on or handles with a literal channel name (ipcMain.on, ipcMain.handle and similar). One channel per line.",
+      "format": "list"
+    },
+    {
+      "id": "ipc-main-channels/webtorrent-desktop",
+      "template": "ipc-main-channels",
+      "app": "WebTorrent Desktop",
+      "repo": "webtorrent/webtorrent-desktop",
+      "commit": "6c91af3",
+      "path": ".",
+      "question": "List every IPC channel name that WebTorrent Desktop's main process listens on or handles with a literal channel name (ipcMain.on, ipcMain.handle and similar). One channel per line.",
+      "format": "list"
+    },
+    {
+      "id": "ipc-main-channels/ferdium",
+      "template": "ipc-main-channels",
+      "app": "Ferdium",
+      "repo": "ferdium/ferdium-app",
+      "commit": "764f82f",
+      "path": ".",
+      "question": "List every IPC channel name that Ferdium's main process listens on or handles with a literal channel name (ipcMain.on, ipcMain.handle and similar). One channel per line.",
+      "format": "list"
+    },
+    {
+      "id": "ipc-main-channels/insomnia",
+      "template": "ipc-main-channels",
+      "app": "Insomnia",
+      "repo": "Kong/insomnia",
+      "commit": "88ae88d",
+      "path": "packages/insomnia",
+      "question": "List every IPC channel name that Insomnia's main process listens on or handles with a literal channel name (ipcMain.on, ipcMain.handle and similar). One channel per line.",
+      "format": "list"
+    },
+    {
+      "id": "ipc-main-channels/etcher",
+      "template": "ipc-main-channels",
+      "app": "balenaEtcher",
+      "repo": "balena-io/etcher",
+      "commit": "dbd6aae",
+      "path": ".",
+      "question": "List every IPC channel name that balenaEtcher's main process listens on or handles with a literal channel name (ipcMain.on, ipcMain.handle and similar). One channel per line.",
+      "format": "list"
+    },
+    {
+      "id": "ipc-main-channels/hyper",
+      "template": "ipc-main-channels",
+      "app": "Hyper",
+      "repo": "vercel/hyper",
+      "commit": "30ec0a2",
+      "path": ".",
+      "question": "List every IPC channel name that Hyper's main process listens on or handles with a literal channel name (ipcMain.on, ipcMain.handle and similar). One channel per line.",
+      "format": "list"
+    },
+    {
+      "id": "ipc-main-channels/beekeeper-studio",
+      "template": "ipc-main-channels",
+      "app": "Beekeeper Studio",
+      "repo": "beekeeper-studio/beekeeper-studio",
+      "commit": "3407432",
+      "path": "apps/studio",
+      "question": "List every IPC channel name that Beekeeper Studio's main process listens on or handles with a literal channel name (ipcMain.on, ipcMain.handle and similar). One channel per line.",
+      "format": "list"
+    },
+    {
+      "id": "ipc-main-channels/youtube-music",
+      "template": "ipc-main-channels",
+      "app": "YouTube Music Desktop",
+      "repo": "th-ch/youtube-music",
+      "commit": "7c55260",
+      "path": ".",
+      "question": "List every IPC channel name that YouTube Music Desktop's main process listens on or handles with a literal channel name (ipcMain.on, ipcMain.handle and similar). One channel per line.",
+      "format": "list"
+    },
+    {
+      "id": "ipc-main-channels/stretchly",
+      "template": "ipc-main-channels",
+      "app": "Stretchly",
+      "repo": "hovancik/stretchly",
+      "commit": "9aeb504",
+      "path": ".",
+      "question": "List every IPC channel name that Stretchly's main process listens on or handles with a literal channel name (ipcMain.on, ipcMain.handle and similar). One channel per line.",
+      "format": "list"
+    },
+    {
+      "id": "preload-scripts/ferdium",
+      "template": "preload-scripts",
+      "app": "Ferdium",
+      "repo": "ferdium/ferdium-app",
+      "commit": "764f82f",
+      "path": ".",
+      "question": "List the preload scripts Ferdium passes to its windows, as file paths relative to the app folder. One path per line.",
+      "format": "list"
+    },
+    {
+      "id": "preload-scripts/joplin",
+      "template": "preload-scripts",
+      "app": "Joplin",
+      "repo": "laurent22/joplin",
+      "commit": "280954e",
+      "path": "packages/app-desktop",
+      "question": "List the preload scripts Joplin passes to its windows, as file paths relative to the app folder. One path per line.",
+      "format": "list"
+    },
+    {
+      "id": "preload-scripts/insomnia",
+      "template": "preload-scripts",
+      "app": "Insomnia",
+      "repo": "Kong/insomnia",
+      "commit": "88ae88d",
+      "path": "packages/insomnia",
+      "question": "List the preload scripts Insomnia passes to its windows, as file paths relative to the app folder. One path per line.",
+      "format": "list"
+    },
+    {
+      "id": "preload-scripts/standard-notes",
+      "template": "preload-scripts",
+      "app": "Standard Notes",
+      "repo": "standardnotes/app",
+      "commit": "8929036",
+      "path": "packages/desktop",
+      "question": "List the preload scripts Standard Notes passes to its windows, as file paths relative to the app folder. One path per line.",
+      "format": "list"
+    },
+    {
+      "id": "preload-scripts/freetube",
+      "template": "preload-scripts",
+      "app": "FreeTube",
+      "repo": "FreeTubeApp/FreeTube",
+      "commit": "834b8af",
+      "path": ".",
+      "question": "List the preload scripts FreeTube passes to its windows, as file paths relative to the app folder. One path per line.",
+      "format": "list"
+    },
+    {
+      "id": "preload-scripts/stretchly",
+      "template": "preload-scripts",
+      "app": "Stretchly",
+      "repo": "hovancik/stretchly",
+      "commit": "9aeb504",
+      "path": ".",
+      "question": "List the preload scripts Stretchly passes to its windows, as file paths relative to the app folder. One path per line.",
+      "format": "list"
+    },
+    {
+      "id": "preload-scripts/youtube-music",
+      "template": "preload-scripts",
+      "app": "YouTube Music Desktop",
+      "repo": "th-ch/youtube-music",
+      "commit": "7c55260",
+      "path": ".",
+      "question": "List the preload scripts YouTube Music Desktop passes to its windows, as file paths relative to the app folder. One path per line.",
+      "format": "list"
+    },
+    {
+      "id": "preload-scripts/electron-quick-start",
+      "template": "preload-scripts",
+      "app": "Electron Quick Start",
+      "repo": "electron/electron-quick-start",
+      "commit": "95ee397",
+      "path": ".",
+      "question": "List the preload scripts Electron Quick Start passes to its windows, as file paths relative to the app folder. One path per line.",
+      "format": "list"
+    },
+    {
+      "id": "preload-scripts/bitwarden-desktop",
+      "template": "preload-scripts",
+      "app": "Bitwarden",
+      "repo": "bitwarden/clients",
+      "commit": "dd4d858",
+      "path": "apps/desktop",
+      "question": "List the preload scripts Bitwarden passes to its windows, as file paths relative to the app folder. One path per line.",
+      "format": "list"
+    }
+  ]
+}
