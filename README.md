@@ -76,7 +76,7 @@ jobs:
       - uses: Eliot5566/app-xray@main
         with:
           path: .                       # the folder with the app's package.json
-          fail-on: new-service          # optional: new-host, new-service, new-package, new-serious, electron-downgrade
+          fail-on: new-service          # optional: new-host, new-service, new-package, new-permission, new-serious, electron-downgrade
 ```
 
 The action scans the pull request's base commit and its head, posts one comment

@@ -68,3 +68,51 @@ describe("packageOf", () => {
     expect(packageOf("`${dir}/x`")).toBeNull();
   });
 });
+
+describe("diffReports for APKs and executables", async () => {
+  const { binaryReport } = await import("../src/native/binary.js");
+  const go = JSON.parse(await readFile(new URL("./fixtures/go-gh.rea.json", import.meta.url), "utf8"));
+  const base = binaryReport({ file: "/bin/gh", sha256: "", reaVersion: "6.7.0", go, rust: null, endpoints: [] });
+
+  it("lists library version changes and new modules", () => {
+    const deps = base.dependencies!;
+    const next: XrayReport = {
+      ...structuredClone(base),
+      dependencies: [
+        ...deps.map((d) => (d.name === "golang.org/x/net" ? { ...d, version: "v0.99.0" } : d)),
+        { ecosystem: "go", name: "github.com/new/dep", version: "v1.0.0", replacedBy: null },
+      ],
+    };
+    const d = diffReports(base, next);
+    const old = deps.find((x) => x.name === "golang.org/x/net")!.version;
+    expect(d.versions).toEqual([`golang.org/x/net ${old} → v0.99.0`]);
+    expect(d.packages.added).toEqual(["github.com/new/dep"]);
+    expect(renderMarkdown(d)).toContain("Library versions");
+  });
+
+  it("lists new Android permissions and fails on them when asked", () => {
+    const android = (permissions: string[]) => ({
+      package: "a.b",
+      versionCode: 1,
+      minSdk: 24,
+      targetSdk: 35,
+      permissions,
+      sensitivePermissions: [],
+      components: { activities: 1, services: 0, receivers: 0, providers: 0, exported: 1 },
+      debuggable: false,
+      allowBackup: false,
+      usesCleartextTraffic: null,
+      networkSecurityConfig: false,
+      usesAdvertisingId: false,
+      sdks: [],
+      nativeLibs: [],
+      dexClasses: 1,
+    });
+    const before: XrayReport = { ...structuredClone(base), android: android(["android.permission.INTERNET"]) };
+    const after: XrayReport = { ...structuredClone(base), android: android(["android.permission.CAMERA", "android.permission.INTERNET"]) };
+    const d = diffReports(before, after);
+    expect(d.permissions.added).toEqual(["android.permission.CAMERA"]);
+    expect(failures(d, ["new-permission"])).toEqual(["new permissions: android.permission.CAMERA"]);
+    expect(failures(d, ["new-host"])).toEqual([]);
+  });
+});
