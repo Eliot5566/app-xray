@@ -2,7 +2,7 @@ import { mkdir, readdir, readFile, writeFile } from "node:fs/promises";
 import path from "node:path";
 import type { Severity, XrayReport } from "./core/schema.js";
 import { renderBadge } from "./report/badge.js";
-import { androidSubtitle, nativeSubtitle, renderCard } from "./report/card.js";
+import { androidSubtitle, modelSubtitle, nativeSubtitle, renderCard } from "./report/card.js";
 import { esc, previewTags, renderHtml } from "./report/html.js";
 import { renderPng } from "./report/png.js";
 
@@ -89,7 +89,9 @@ export async function buildGallery(reportsDir: string, outDir: string, options: 
       name: shown.target.name ?? entry.name,
       version: report.target.version,
       electron: report.frameworks.find((f) => f.kind === "electron")?.version ?? null,
-      platform: report.native
+      platform: report.model
+        ? modelSubtitle(report)
+        : report.native
         ? nativeSubtitle(report)
         : report.android
         ? androidSubtitle(report)

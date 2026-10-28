@@ -5,6 +5,7 @@ import { electronSupportRule } from "./electronSupport.js";
 import { localStorageRule, nativeAddonsRule } from "./ingredients.js";
 import { dynamicIpcChannelsRule, ipcSenderValidationRule } from "./ipc.js";
 import { goBuildRule, goSupportRule, knownVulnerabilitiesRule } from "./native.js";
+import { modelFormatRule, modelPickleRule, modelTemplateRule } from "./model.js";
 import { plainHttpRule } from "./plainHttp.js";
 import { remoteContentRule } from "./remoteContent.js";
 import { trackersRule } from "./trackers.js";
@@ -31,6 +32,9 @@ export function defaultRules(): Rule[] {
     goSupportRule(),
     goBuildRule,
     knownVulnerabilitiesRule,
+    modelPickleRule,
+    modelTemplateRule,
+    modelFormatRule,
   ];
 }
 

@@ -1,5 +1,5 @@
-import type { AndroidFacts, Dependency, Finding, NativeFacts, Vulnerability, SourceLocation, XrayReport } from "../core/schema.js";
-import { androidSubtitle, nativeSubtitle } from "./card.js";
+import type { AndroidFacts, Dependency, Finding, ModelFacts, NativeFacts, Vulnerability, SourceLocation, XrayReport } from "../core/schema.js";
+import { androidSubtitle, formatCount, modelSubtitle, nativeSubtitle } from "./card.js";
 
 export interface PageMeta {
   /** Absolute URL of this page, for link previews. */
@@ -34,7 +34,9 @@ ${previewTags(`${title} · App X-Ray`, summaryLine(report), meta)}<style>${CSS}<
   <p class="eyebrow">${meta.back ? `<a href="${esc(meta.back.href)}">${esc(meta.back.label)}</a> · ` : ""}App X-Ray</p>
   <h1>${esc(title)}${report.target.version ? ` <span class="ver">${esc(report.target.version)}</span>` : ""}</h1>
   <p class="meta">${
-    report.native
+    report.model
+      ? esc(modelSubtitle(report))
+      : report.native
       ? `${esc(nativeSubtitle(report))} · ${report.dependencies?.length ?? 0} libraries · ${report.endpoints.length} addresses`
       : report.android
       ? `${esc(androidSubtitle(report))} · ${report.android.package ? `${esc(report.android.package)} · ` : ""}${report.endpoints.length} addresses · ${report.android.permissions.length} permissions`
@@ -59,7 +61,7 @@ ${previewTags(`${title} · App X-Ray`, summaryLine(report), meta)}<style>${CSS}<
   )}
 </section>
 
-${report.native ? nativeSections(report.native, report.dependencies ?? [], report.vulnerabilities) : report.android ? androidSections(report.android) : desktopSections(report, loc)}
+${report.model ? modelSections(report.model) : report.native ? nativeSections(report.native, report.dependencies ?? [], report.vulnerabilities) : report.android ? androidSections(report.android) : desktopSections(report, loc)}
 
 ${
   meta.badgeMarkdown
@@ -141,6 +143,48 @@ function desktopSections(report: XrayReport, loc: (l: SourceLocation | null) => 
 `;
 }
 
+function modelSections(m: ModelFacts): string {
+  const imports = m.files.flatMap((f) => f.imports.map((i) => [f.path, i.name, i.risk] as Cell[]));
+  const templates = m.files.filter((f) => f.chatTemplate);
+  return `<section>
+  <h2>Model files</h2>
+  ${table(
+    ["File", "Format", "Size", "Parameters", "Architecture", "Weights", "Context", "License"],
+    m.files.map((f) => [
+      f.path,
+      f.format,
+      formatBytes(f.bytes),
+      f.parameters === null ? "—" : formatCount(f.parameters),
+      f.architecture ?? "—",
+      f.quantization ?? "—",
+      f.contextLength === null ? "—" : String(f.contextLength),
+      f.license ?? "—",
+    ]),
+    "No model files.",
+  )}
+</section>
+
+<section>
+  <h2>Pickle imports</h2>
+  ${table(["File", "Callable", "Risk"], imports, "No pickle-based files, so nothing runs when the weights are loaded.")}
+</section>
+${templates
+  .map(
+    (f) => `
+<section>
+  <h2>Chat template: ${esc(f.path)}</h2>
+  <pre class="snippet">${esc(f.chatTemplate!.length > 6000 ? `${f.chatTemplate!.slice(0, 6000)}\n…` : f.chatTemplate!)}</pre>
+</section>`,
+  )
+  .join("")}`;
+}
+
+function formatBytes(n: number): string {
+  if (n >= 1024 ** 3) return `${(n / 1024 ** 3).toFixed(1)} GB`;
+  if (n >= 1024 ** 2) return `${(n / 1024 ** 2).toFixed(1)} MB`;
+  return `${Math.ceil(n / 1024)} KB`;
+}
+
 function nativeSections(n: NativeFacts, deps: Dependency[], vulns: Vulnerability[] | undefined): string {
   const advisories = (d: Dependency) =>
     vulns === undefined ? "not checked" : vulns.filter((v) => v.package === d.name && v.version === d.version).map((v) => v.id).join(", ");
@@ -210,7 +254,7 @@ export function summaryLine(report: XrayReport): string {
   const counts = countBySeverity(report.findings);
   const electron = report.frameworks.find((f) => f.kind === "electron");
   const tally = (["high", "medium", "low"] as const).map((s) => `${counts[s]} ${s}`).join(", ");
-  const platform = report.native ? `${nativeSubtitle(report)}. ` : report.android ? `${androidSubtitle(report)}. ` : electron ? `Electron ${electron.version ?? "version unknown"}. ` : "";
+  const platform = report.model ? `${modelSubtitle(report)}. ` : report.native ? `${nativeSubtitle(report)}. ` : report.android ? `${androidSubtitle(report)}. ` : electron ? `Electron ${electron.version ?? "version unknown"}. ` : "";
   return `${platform}Findings: ${tally}. Static analysis with ${report.engine.name === "rea-agents" ? "REA" : "app-xray"}.`;
 }
 
