@@ -1,4 +1,5 @@
-import type { Finding, SourceLocation, XrayReport } from "../core/schema.js";
+import type { AndroidFacts, Finding, SourceLocation, XrayReport } from "../core/schema.js";
+import { androidSubtitle } from "./card.js";
 
 export interface PageMeta {
   /** Absolute URL of this page, for link previews. */
@@ -32,7 +33,11 @@ ${previewTags(`${title} · App X-Ray`, summaryLine(report), meta)}<style>${CSS}<
 <header>
   <p class="eyebrow">${meta.back ? `<a href="${esc(meta.back.href)}">${esc(meta.back.label)}</a> · ` : ""}App X-Ray</p>
   <h1>${esc(title)}${report.target.version ? ` <span class="ver">${esc(report.target.version)}</span>` : ""}</h1>
-  <p class="meta">${electron ? `Electron ${esc(electron.version ?? "version unknown")} · ` : ""}${report.endpoints.length} addresses · ${report.modules.length} modules · ${report.ipcChannels.length} IPC channels</p>
+  <p class="meta">${
+    report.android
+      ? `${esc(androidSubtitle(report))} · ${report.android.package ? `${esc(report.android.package)} · ` : ""}${report.endpoints.length} addresses · ${report.android.permissions.length} permissions`
+      : `${electron ? `Electron ${esc(electron.version ?? "version unknown")} · ` : ""}${report.endpoints.length} addresses · ${report.modules.length} modules · ${report.ipcChannels.length} IPC channels`
+  }</p>
   <ul class="tally">
     ${(["high", "medium", "low", "info"] as const).map((s) => `<li class="sev-${s}"><b>${counts[s]}</b> ${s}</li>`).join("")}
   </ul>
@@ -52,7 +57,37 @@ ${previewTags(`${title} · App X-Ray`, summaryLine(report), meta)}<style>${CSS}<
   )}
 </section>
 
-<section>
+${report.android ? androidSections(report.android) : desktopSections(report, loc)}
+
+${
+  meta.badgeMarkdown
+    ? `<section>
+  <h2>README badge</h2>
+  <p>Maintainers can show this report in their README:</p>
+  <pre class="snippet">${esc(meta.badgeMarkdown)}</pre>
+</section>
+
+`
+    : ""
+}<section>
+  <h2>What this report cannot see</h2>
+  <ul class="limits">${report.limitations.map((l) => `<li>${esc(l)}</li>`).join("")}</ul>
+</section>
+
+<footer>
+  Generated ${esc(report.generatedAt)} by app-xray from ${esc(report.engine.name)} ${esc(report.engine.version)}
+  (${esc(report.engine.operation)}${report.engine.evidenceId ? `, evidence ${esc(report.engine.evidenceId.slice(0, 15))}…` : ""}).
+  Static analysis only: the app was not run. Findings describe what the code contains, not what it does at runtime.
+</footer>
+</main>
+<script type="application/json" id="xray-data">${jsonForScript(report)}</script>
+</body>
+</html>
+`;
+}
+
+function desktopSections(report: XrayReport, loc: (l: SourceLocation | null) => Cell): string {
+  return `<section>
   <h2>Modules</h2>
   ${table(
     ["Module", "Used by"],
@@ -101,31 +136,49 @@ ${previewTags(`${title} · App X-Ray`, summaryLine(report), meta)}<style>${CSS}<
   }
 </section>
 
-${
-  meta.badgeMarkdown
-    ? `<section>
-  <h2>README badge</h2>
-  <p>Maintainers can show this report in their README:</p>
-  <pre class="snippet">${esc(meta.badgeMarkdown)}</pre>
-</section>
-
-`
-    : ""
-}<section>
-  <h2>What this report cannot see</h2>
-  <ul class="limits">${report.limitations.map((l) => `<li>${esc(l)}</li>`).join("")}</ul>
-</section>
-
-<footer>
-  Generated ${esc(report.generatedAt)} by app-xray from ${esc(report.engine.name)} ${esc(report.engine.version)}
-  (${esc(report.engine.operation)}${report.engine.evidenceId ? `, evidence ${esc(report.engine.evidenceId.slice(0, 15))}…` : ""}).
-  Static analysis only: the app was not run. Findings describe what the code contains, not what it does at runtime.
-</footer>
-</main>
-<script type="application/json" id="xray-data">${jsonForScript(report)}</script>
-</body>
-</html>
 `;
+}
+
+function androidSections(a: AndroidFacts): string {
+  const c = a.components;
+  return `<section>
+  <h2>Permissions</h2>
+  ${table(
+    ["Permission", "Sensitive"],
+    a.permissions.map((p) => [p, a.sensitivePermissions.includes(p) ? "yes" : ""]),
+    "The app asks for no permissions.",
+  )}
+</section>
+
+<section>
+  <h2>SDKs compiled in</h2>
+  ${table(
+    ["SDK", "Category", "Classes", "Example class"],
+    a.sdks.map((s) => [s.name, s.category, String(s.classes), s.example]),
+    "No known analytics, advertising, session-recording or crash-reporting SDK found.",
+  )}
+</section>
+
+<section>
+  <h2>Manifest and packaging</h2>
+  ${table(
+    ["Fact", "Value"],
+    [
+      ["Package", a.package ?? "—"],
+      ["Version code", a.versionCode === null ? "—" : String(a.versionCode)],
+      ["Target / minimum API", `${a.targetSdk ?? "?"} / ${a.minSdk ?? "?"}`],
+      ["Components", `${c.activities} activities, ${c.services} services, ${c.receivers} receivers, ${c.providers} providers (${c.exported} open to other apps)`],
+      ["Debuggable", a.debuggable ? "yes" : "no"],
+      ["Backup allowed", a.allowBackup === null ? "default (yes)" : a.allowBackup ? "yes" : "no"],
+      ["Cleartext HTTP", a.usesCleartextTraffic === null ? "default" : a.usesCleartextTraffic ? "allowed" : "blocked"],
+      ["Network security config", a.networkSecurityConfig ? "yes" : "no"],
+      ["Advertising ID", a.usesAdvertisingId ? "can read it" : "no sign of it"],
+      ["DEX classes", String(a.dexClasses)],
+      ["Native libraries", a.nativeLibs.join(", ") || "none"],
+    ],
+    "",
+  )}
+</section>`;
 }
 
 /** One line for link previews: the severity tally and the Electron version. */
@@ -133,7 +186,8 @@ export function summaryLine(report: XrayReport): string {
   const counts = countBySeverity(report.findings);
   const electron = report.frameworks.find((f) => f.kind === "electron");
   const tally = (["high", "medium", "low"] as const).map((s) => `${counts[s]} ${s}`).join(", ");
-  return `${electron ? `Electron ${electron.version ?? "version unknown"}. ` : ""}Findings: ${tally}. Static analysis with REA.`;
+  const platform = report.android ? `${androidSubtitle(report)}. ` : electron ? `Electron ${electron.version ?? "version unknown"}. ` : "";
+  return `${platform}Findings: ${tally}. Static analysis with ${report.engine.name === "rea-agents" ? "REA" : "app-xray"}.`;
 }
 
 /** Open Graph and Twitter tags, so a shared link shows the summary card. */
