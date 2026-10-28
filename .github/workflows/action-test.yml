@@ -1,0 +1,23 @@
+name: action-test
+
+# Runs this repository's own GitHub Action on the fixture app, so a change to action.yml is
+# exercised on its pull request before anyone else uses it.
+
+on:
+  pull_request:
+
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  diff:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - id: xray
+        uses: ./
+        with:
+          path: test/fixtures/demo-app
+      - name: Check outputs
+        run: test -s "${{ steps.xray.outputs.report }}" && echo "changed=${{ steps.xray.outputs.changed }}"
