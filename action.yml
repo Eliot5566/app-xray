@@ -1,0 +1,96 @@
+name: App X-Ray diff
+description: Scan an Electron app in a pull request, compare it with the base branch, and comment on new servers, packages, trackers and security settings.
+author: Eliot5566
+branding:
+  icon: eye
+  color: orange
+
+inputs:
+  path:
+    description: Folder of the app to scan, relative to the repository root (the one with the app's package.json).
+    default: "."
+  base-ref:
+    description: Commit or branch to compare against. Defaults to the pull request's base commit.
+    default: ${{ github.event.pull_request.base.sha }}
+  comment:
+    description: Post or update a comment on the pull request with the changes.
+    default: "true"
+  fail-on:
+    description: "Fail the job on any of: new-host, new-service, new-package, new-serious, electron-downgrade (comma-separated)."
+    default: ""
+  github-token:
+    description: Token used to comment on the pull request.
+    default: ${{ github.token }}
+
+outputs:
+  changed:
+    description: "\"true\" when anything changed between the two scans."
+    value: ${{ steps.diff.outputs.changed }}
+  report:
+    description: Path of the markdown summary.
+    value: ${{ steps.diff.outputs.report }}
+
+runs:
+  using: composite
+  steps:
+    - uses: actions/setup-node@v4
+      with:
+        node-version: 22
+
+    - name: Install App X-Ray
+      shell: bash
+      run: cd "$GITHUB_ACTION_PATH" && npm ci --no-audit --no-fund --loglevel=error
+
+    - name: Scan the base commit
+      shell: bash
+      env:
+        BASE_REF: ${{ inputs.base-ref }}
+        APP_PATH: ${{ inputs.path }}
+      run: |
+        if [ -z "$BASE_REF" ]; then echo "::error::No base-ref: run on pull_request or set base-ref"; exit 2; fi
+        git fetch --quiet --depth=1 origin "$BASE_REF"
+        git worktree add --quiet --detach "$RUNNER_TEMP/xray-base" FETCH_HEAD
+        node "$GITHUB_ACTION_PATH/dist/cli.js" scan "$RUNNER_TEMP/xray-base/$APP_PATH" --out "$RUNNER_TEMP/xray-before" --quiet
+
+    - name: Scan this commit
+      shell: bash
+      env:
+        APP_PATH: ${{ inputs.path }}
+      run: node "$GITHUB_ACTION_PATH/dist/cli.js" scan "$APP_PATH" --out "$RUNNER_TEMP/xray-after" --quiet
+
+    - name: Compare
+      id: diff
+      shell: bash
+      env:
+        FAIL_ON: ${{ inputs.fail-on }}
+      run: |
+        set +e
+        node "$GITHUB_ACTION_PATH/dist/cli.js" diff "$RUNNER_TEMP/xray-before" "$RUNNER_TEMP/xray-after" --fail-on "$FAIL_ON" > "$RUNNER_TEMP/xray-diff.md"
+        status=$?
+        set -e
+        if [ "$status" -gt 1 ]; then exit "$status"; fi
+        cat "$RUNNER_TEMP/xray-diff.md" >> "$GITHUB_STEP_SUMMARY"
+        node "$GITHUB_ACTION_PATH/dist/cli.js" diff "$RUNNER_TEMP/xray-before" "$RUNNER_TEMP/xray-after" --format json > "$RUNNER_TEMP/xray-diff.json"
+        echo "report=$RUNNER_TEMP/xray-diff.md" >> "$GITHUB_OUTPUT"
+        echo "changed=$(node -p "require(process.argv[1]).changed" "$RUNNER_TEMP/xray-diff.json")" >> "$GITHUB_OUTPUT"
+        echo "$status" > "$RUNNER_TEMP/xray-status"
+
+    - name: Comment on the pull request
+      if: inputs.comment == 'true' && github.event.pull_request.number
+      shell: bash
+      env:
+        GH_TOKEN: ${{ inputs.github-token }}
+        PR: ${{ github.event.pull_request.number }}
+      run: |
+        # One comment per pull request, updated on every push.
+        id=$(gh api "repos/$GITHUB_REPOSITORY/issues/$PR/comments" --paginate \
+          --jq '[.[] | select(.body | startswith("<!-- app-xray-diff -->"))][0].id // empty')
+        if [ -n "$id" ]; then
+          gh api --method PATCH "repos/$GITHUB_REPOSITORY/issues/comments/$id" -F "body=@$RUNNER_TEMP/xray-diff.md" > /dev/null
+        else
+          gh api --method POST "repos/$GITHUB_REPOSITORY/issues/$PR/comments" -F "body=@$RUNNER_TEMP/xray-diff.md" > /dev/null
+        fi
+
+    - name: Apply fail-on
+      shell: bash
+      run: exit "$(cat "$RUNNER_TEMP/xray-status")"
