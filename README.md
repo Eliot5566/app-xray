@@ -96,6 +96,9 @@ npm run bench                                   # scans the corpus into bench-ou
 node dist/cli.js gallery bench-out --out site   # writes site/index.html
 ```
 
+[REA-Bench](bench/rea-bench/) turns the same reports into questions for coding
+agents and grades their answers, to compare agents with and without REA's tools.
+
 To work on App X-Ray itself: `npm install`, `npm test`, `node dist/cli.js scan …`.
 
 ## Responsible use

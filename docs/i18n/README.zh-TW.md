@@ -44,7 +44,7 @@ npx github:Eliot5566/app-xray scan /path/to/app
 
 ## 圖鑑
 
-開源 App 的報告圖鑑：<https://eliot5566.github.io/app-xray/>（每週一更新）。
+開源 App 的報告圖鑑：<https://eliot5566.github.io/app-xray/>（每週一更新）。[REA-Bench](../../bench/rea-bench/) 用同一批報告出題測試 AI 代理人，比較有無 REA 工具的差距。
 
 ## 負責任地使用
 

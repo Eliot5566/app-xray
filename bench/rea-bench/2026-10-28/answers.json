@@ -1,0 +1,371 @@
+[
+  {
+    "id": "electron-version/signal-desktop",
+    "expected": "44.9.1"
+  },
+  {
+    "id": "electron-version/youtube-music",
+    "expected": "42.5.0"
+  },
+  {
+    "id": "electron-version/marktext",
+    "expected": "42.1.0"
+  },
+  {
+    "id": "electron-version/insomnia",
+    "expected": "43.2.0"
+  },
+  {
+    "id": "electron-version/github-desktop",
+    "expected": "44.9.1"
+  },
+  {
+    "id": "electron-version/stretchly",
+    "expected": "44.5.1"
+  },
+  {
+    "id": "electron-version/beekeeper-studio",
+    "expected": "44.3.0"
+  },
+  {
+    "id": "electron-version/zettlr",
+    "expected": "44.7.0"
+  },
+  {
+    "id": "electron-version/standard-notes",
+    "expected": "35.2.0"
+  },
+  {
+    "id": "electron-supported/webtorrent-desktop",
+    "expected": "no"
+  },
+  {
+    "id": "electron-supported/zettlr",
+    "expected": "yes"
+  },
+  {
+    "id": "electron-supported/ferdium",
+    "expected": "yes"
+  },
+  {
+    "id": "electron-supported/insomnia",
+    "expected": "yes"
+  },
+  {
+    "id": "electron-supported/beekeeper-studio",
+    "expected": "yes"
+  },
+  {
+    "id": "electron-supported/github-desktop",
+    "expected": "yes"
+  },
+  {
+    "id": "electron-supported/youtube-music",
+    "expected": "no"
+  },
+  {
+    "id": "electron-supported/freetube",
+    "expected": "yes"
+  },
+  {
+    "id": "electron-supported/jitsi-meet-electron",
+    "expected": "yes"
+  },
+  {
+    "id": "node-integration/beekeeper-studio",
+    "expected": "no"
+  },
+  {
+    "id": "node-integration/github-desktop",
+    "expected": "yes"
+  },
+  {
+    "id": "node-integration/signal-desktop",
+    "expected": "no"
+  },
+  {
+    "id": "node-integration/webtorrent-desktop",
+    "expected": "yes"
+  },
+  {
+    "id": "node-integration/electron-quick-start",
+    "expected": "no"
+  },
+  {
+    "id": "node-integration/youtube-music",
+    "expected": "no"
+  },
+  {
+    "id": "node-integration/jitsi-meet-electron",
+    "expected": "no"
+  },
+  {
+    "id": "node-integration/insomnia",
+    "expected": "yes"
+  },
+  {
+    "id": "node-integration/bitwarden-desktop",
+    "expected": "no"
+  },
+  {
+    "id": "window-count/stretchly",
+    "expected": 8
+  },
+  {
+    "id": "window-count/etcher",
+    "expected": 1
+  },
+  {
+    "id": "window-count/bitwarden-desktop",
+    "expected": 1
+  },
+  {
+    "id": "window-count/ferdium",
+    "expected": 2
+  },
+  {
+    "id": "window-count/hyper",
+    "expected": 1
+  },
+  {
+    "id": "window-count/joplin",
+    "expected": 2
+  },
+  {
+    "id": "window-count/element-desktop",
+    "expected": 1
+  },
+  {
+    "id": "window-count/signal-desktop",
+    "expected": 9
+  },
+  {
+    "id": "window-count/freetube",
+    "expected": 2
+  },
+  {
+    "id": "ipc-main-channels/joplin",
+    "expected": [
+      "apply-update-now",
+      "check-for-updates",
+      "secondary-window-added"
+    ]
+  },
+  {
+    "id": "ipc-main-channels/webtorrent-desktop",
+    "expected": [
+      "checkForExternalPlayer",
+      "downloadFinished",
+      "ipcReady",
+      "onPlayerClose",
+      "onPlayerOpen",
+      "openExternalPlayer",
+      "openFiles",
+      "openPath",
+      "openTorrentFile",
+      "setAspectRatio",
+      "setBadge",
+      "setBounds",
+      "setDefaultFileHandler",
+      "setTitle",
+      "stateSaved",
+      "stopFolderWatcher",
+      "toggleFullScreen"
+    ]
+  },
+  {
+    "id": "ipc-main-channels/ferdium",
+    "expected": [
+      "autoUpdate",
+      "clear-cache",
+      "clipboard-write-image-data-url",
+      "clipboard-write-text",
+      "detect-language",
+      "download-folder-select",
+      "feature-basic-auth-credentials",
+      "get-desktop-capturer-sources",
+      "get-dnd",
+      "get-translation",
+      "initialAppSettings",
+      "knownCertificateHosts",
+      "modifyRequestHeaders",
+      "open-browser-window",
+      "set-spellchecker-locales",
+      "stop-download",
+      "stop-find-in-page",
+      "toggle-pause-download",
+      "updateAppSettings",
+      "window.toolbar-double-clicked"
+    ]
+  },
+  {
+    "id": "ipc-main-channels/insomnia",
+    "expected": [
+      "database.invoke",
+      "hidden-window-received-port",
+      "main-window-script-port-ready",
+      "mcp.authConfirmed",
+      "open-channel-to-hidden-browser-window",
+      "renderer-listener-ready"
+    ]
+  },
+  {
+    "id": "ipc-main-channels/etcher",
+    "expected": [
+      "source-selector-ready",
+      "webview-dom-ready"
+    ]
+  },
+  {
+    "id": "ipc-main-channels/hyper",
+    "expected": [
+      "child_process.exec",
+      "child_process.execFile",
+      "getBasePaths",
+      "getDecoratedConfig",
+      "getDecoratedKeymaps",
+      "getDeprecatedConfig",
+      "getLoadedPluginVersions",
+      "getPaths"
+    ]
+  },
+  {
+    "id": "ipc-main-channels/beekeeper-studio",
+    "expected": [
+      "add-native-menu-item",
+      "app:restart",
+      "bksConfigSource",
+      "clipboard:read",
+      "clipboard:write",
+      "closeWindow",
+      "disable-connection-menu-items",
+      "download-update",
+      "enable-connection-menu-items",
+      "install-update",
+      "isFullscreen",
+      "isMaximized",
+      "maximizeWindow",
+      "minimizeWindow",
+      "platformInfo",
+      "remove-native-menu-item",
+      "requestPorts",
+      "setFullscreen",
+      "unmaximizeWindow",
+      "updater-ready"
+    ]
+  },
+  {
+    "id": "ipc-main-channels/youtube-music",
+    "expected": [
+      "get-renderer-script",
+      "peard:autoplay-changed",
+      "peard:fullscreen-changed",
+      "peard:fullscreen-changed-supported",
+      "peard:get-config",
+      "peard:get-downloads-folder",
+      "peard:get-main-plugin-names",
+      "peard:get-path",
+      "peard:get-queue-response",
+      "peard:get-shuffle-response",
+      "peard:menu-event",
+      "peard:play-or-paused",
+      "peard:player-api-loaded",
+      "peard:reload",
+      "peard:repeat-changed",
+      "peard:restart",
+      "peard:search-results",
+      "peard:seeked",
+      "peard:set-config",
+      "peard:set-fullscreen",
+      "peard:shuffle-changed",
+      "peard:time-changed",
+      "peard:video-src-changed",
+      "peard:volume-changed"
+    ]
+  },
+  {
+    "id": "ipc-main-channels/stretchly",
+    "expected": [
+      "finish-long-break",
+      "finish-mini-break",
+      "get-global-value",
+      "long-break-loaded",
+      "mini-break-loaded",
+      "open-contributor-auth",
+      "open-contributor-preferences",
+      "play-sound",
+      "postpone-long-break",
+      "postpone-mini-break",
+      "resolve-local-audio",
+      "restore-defaults",
+      "send-long-break-data",
+      "send-mini-break-data",
+      "set-contributor",
+      "set-global-value",
+      "set-window-size",
+      "settings-get"
+    ]
+  },
+  {
+    "id": "preload-scripts/ferdium",
+    "expected": [
+      "webview/webauthn-popup-preload.js"
+    ]
+  },
+  {
+    "id": "preload-scripts/joplin",
+    "expected": [
+      "utils/window/secondaryWindowPreload.js"
+    ]
+  },
+  {
+    "id": "preload-scripts/insomnia",
+    "expected": [
+      "entry.hidden-window-preload.min.js",
+      "entry.plugin-window-preload.min.js",
+      "entry.preload.min.js"
+    ]
+  },
+  {
+    "id": "preload-scripts/standard-notes",
+    "expected": [
+      "app/javascripts/Renderer/Preload.ts"
+    ]
+  },
+  {
+    "id": "preload-scripts/freetube",
+    "expected": [
+      "src/preload/main.js"
+    ]
+  },
+  {
+    "id": "preload-scripts/stretchly",
+    "expected": [
+      "app/break-preload.mjs",
+      "app/contributor-preferences-preload.mjs",
+      "app/electron-bridge.mjs",
+      "app/microbreak-preload.mjs",
+      "app/preferences-preload.mjs",
+      "app/process-preload.mjs",
+      "app/welcome-preload.mjs"
+    ]
+  },
+  {
+    "id": "preload-scripts/youtube-music",
+    "expected": [
+      "../preload/preload.cjs"
+    ]
+  },
+  {
+    "id": "preload-scripts/electron-quick-start",
+    "expected": [
+      "preload.js"
+    ]
+  },
+  {
+    "id": "preload-scripts/bitwarden-desktop",
+    "expected": [
+      "preload.js"
+    ]
+  }
+]
