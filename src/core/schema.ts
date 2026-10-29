@@ -150,6 +150,31 @@ export interface Vulnerability {
   severity: string | null;
 }
 
+/** One model weights file. */
+export interface ModelFile {
+  path: string;
+  format: "gguf" | "safetensors" | "pytorch" | "pickle" | "unknown";
+  bytes: number;
+  /** Total weights (product of tensor shapes), when the header lists tensors. */
+  parameters: number | null;
+  tensors: number | null;
+  architecture: string | null;
+  /** GGUF quantization (Q4_K_M…) or the safetensors dtypes. */
+  quantization: string | null;
+  contextLength: number | null;
+  license: string | null;
+  /** GGUF: the Jinja chat template the runtime renders for every prompt. */
+  chatTemplate: string | null;
+  /** Pickle-based files: callables imported when the file is loaded. */
+  imports: Array<{ name: string; risk: "dangerous" | "unexpected" | "safe" }>;
+  /** Set when the file could not be fully parsed. */
+  error: string | null;
+}
+
+export interface ModelFacts {
+  files: ModelFile[];
+}
+
 export type Severity = "info" | "low" | "medium" | "high";
 
 export interface Finding {
@@ -185,6 +210,8 @@ export interface XrayReport {
   nativeAddonBindings: number;
   /** Present for Android apps (APK input). */
   android?: AndroidFacts;
+  /** Present for model files (GGUF, safetensors, PyTorch/pickle). */
+  model?: ModelFacts;
   /** Present for native executables. */
   native?: NativeFacts;
   /** Libraries compiled into a native executable. */

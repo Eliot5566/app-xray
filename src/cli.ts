@@ -5,6 +5,7 @@ import { parseArgs } from "node:util";
 import { analyzeApk, isApk, toolVersion } from "./android/apk.js";
 import { analyzeBinary, binaryFormat } from "./native/binary.js";
 import { queryOsv } from "./native/osv.js";
+import { analyzeModels, isModelFile, modelFilesIn } from "./models/model.js";
 import { listSourceFiles } from "./core/batches.js";
 import { candidateExecutables, detectElectronVersion } from "./core/electronVersion.js";
 import { normalize } from "./core/normalize.js";
@@ -31,7 +32,8 @@ const USAGE = `Usage: xray scan <app-path> [--out <dir>] [--rea-json <file>] [--
 
 scan
   <app-path>         An installed app folder or .app bundle, an app.asar, an Android .apk,
-                     a Go or Rust executable, or a source checkout
+                     a Go or Rust executable, a model file (.gguf, .safetensors, .pt,
+                     .bin, .pkl…) or a folder of them, or a source checkout
   --out <dir>        Where to write the report files (default: ./xray-out)
   --rea-json <file>  Reuse a saved "rea analyze-javascript-application --json" result
   --all-files        In a source checkout, also analyze tests, stories and build tooling
@@ -108,6 +110,14 @@ async function main(argv: string[]): Promise<number> {
         throw new UsageError(`${target} could not be read as an APK: ${err instanceof Error ? err.message : err}`);
       }),
     );
+    await writeOutputs(report, path.resolve(values.out ?? "xray-out"), log);
+    return 0;
+  }
+
+  const models = targetStat.isFile() ? (isModelFile(target) ? [target] : []) : await modelFilesIn(target);
+  if (models.length > 0) {
+    // Model weights are read natively: headers only, and pickles are walked, never loaded.
+    const report = applyRules(await analyzeModels(path.resolve(target), models.map((m) => path.resolve(m)), { toolVersion: toolVersion() }));
     await writeOutputs(report, path.resolve(values.out ?? "xray-out"), log);
     return 0;
   }

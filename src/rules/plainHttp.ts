@@ -1,6 +1,6 @@
 import type { Rule } from "./types.js";
 
-const STRING_TABLE = new Set(["dex-string", "binary-string"]);
+const STRING_TABLE = new Set(["dex-string", "binary-string", "chat-template"]);
 const LOCAL = new Set(["localhost", "127.0.0.1", "[::1]", "0.0.0.0"]);
 
 export const plainHttpRule: Rule = {

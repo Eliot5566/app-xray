@@ -30,6 +30,7 @@ npx github:Eliot5566/app-xray scan /path/to/app
 | A source checkout | the app's folder in the repo |
 | An Android app | the `.apk` file |
 | A Go or Rust program | the executable (ELF, PE or Mach-O) |
+| AI model weights | a `.gguf`, `.safetensors`, `.pt`/`.pth`/`.bin`/`.ckpt` or `.pkl` file, or a folder of them |
 
 For an installed app, only the app inside it (`resources/app.asar` or
 `resources/app`) is analyzed, not Electron itself; the Electron and Chromium
@@ -167,6 +168,21 @@ Literal URLs are also read from the binary's bytes, so `known-services` works he
 too. Binaries without Go build info or cargo-auditable data still get an address
 list, and the report says the libraries are unknown.
 
+## Model files
+
+`xray scan model.gguf` (or a downloaded Hugging Face folder) reads model headers
+without loading any weights or running anything:
+
+| Rule | What it reports |
+| --- | --- |
+| `model-pickle` | Pickle-based files (`.pt`, `.bin`, `.ckpt`, `.pkl`): every callable the file imports when loaded. `os.system`, `subprocess`, `eval` and similar are high; anything an ordinary PyTorch/NumPy checkpoint would not use is medium |
+| `model-chat-template` | GGUF chat templates that try to reach Python internals (`__globals__`, `popen`…), contain URLs, or hide invisible characters |
+| `model-format` | Files whose header could not be fully read |
+
+Pickles are walked opcode by opcode and never unpickled. The report also lists
+each file's format, size, parameter count, architecture, quantization or dtypes,
+context length and license, and shows GGUF chat templates in full.
+
 ## Limits
 
 - Static analysis only. The app is never run. A finding means the code *contains*
@@ -195,7 +211,7 @@ The summary card bundles the [Inter](https://github.com/rsms/inter) typeface
 
 App X-Ray 用 REA 分析桌面 App，輸出一頁可分享的 HTML 報告、一張可貼到社群的摘要圖卡（card.png）和 README 徽章，內容包括框架與版本、該版本是否仍有安全更新、內嵌的分析／追蹤服務、連線網域，以及視窗安全設定。Go／Rust 執行檔會列出內含的函式庫與版本、Go 版本是否仍受支援；加上 `--osv` 會查詢 OSV 弱點資料庫（只送出套件名稱與版本）。每一項都標出它來自哪個檔案的哪一行。
 
-用法：`npx github:Eliot5566/app-xray scan <App 路徑>`。開源 App 的報告圖鑑在 <https://eliot5566.github.io/app-xray/>，每週一自動更新。`xray diff` 可以比較兩個版本，列出新增的連線網域、套件、追蹤服務與安全設定變化；也可以當 GitHub Action 使用，在每個 PR 自動留言。路徑可以是 Windows／Linux 的安裝資料夾、macOS 的 .app、app.asar、原始碼資料夾，Android 的 .apk 檔，或 Go／Rust 編譯出的執行檔。APK 不需要 Java，會列出權限、內嵌的分析／廣告／錯誤回報 SDK、程式中的網址，以及 debuggable、明文 HTTP、目標 API 版本等設定。
+用法：`npx github:Eliot5566/app-xray scan <App 路徑>`。開源 App 的報告圖鑑在 <https://eliot5566.github.io/app-xray/>，每週一自動更新。`xray diff` 可以比較兩個版本，列出新增的連線網域、套件、追蹤服務與安全設定變化；也可以當 GitHub Action 使用，在每個 PR 自動留言。路徑可以是 Windows／Linux 的安裝資料夾、macOS 的 .app、app.asar、原始碼資料夾，Android 的 .apk 檔，Go／Rust 編譯出的執行檔，或 AI 模型檔（.gguf、.safetensors、.pt、.bin、.pkl，或整個模型資料夾）。模型檔只讀檔頭、不載入權重；pickle 會逐個指令檢查它載入時會呼叫哪些函式（例如 os.system），GGUF 的 chat template 也會檢查是否試圖執行程式或藏了網址。APK 不需要 Java，會列出權限、內嵌的分析／廣告／錯誤回報 SDK、程式中的網址，以及 debuggable、明文 HTTP、目標 API 版本等設定。
 
 只做靜態分析，不會執行目標 App。請只分析自己擁有或有權檢查的軟體。
 
