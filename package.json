@@ -2,14 +2,36 @@
   "name": "app-xray",
   "version": "0.1.0",
   "description": "An ingredients and privacy label for any app, built on REA (Reverse Engineer Anything).",
+  "keywords": [
+    "electron",
+    "apk",
+    "privacy",
+    "security",
+    "sbom",
+    "reverse-engineering",
+    "rea",
+    "static-analysis",
+    "gguf",
+    "pickle"
+  ],
+  "homepage": "https://eliot5566.github.io/app-xray/",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Eliot5566/app-xray.git"
+  },
+  "bugs": {
+    "url": "https://github.com/Eliot5566/app-xray/issues"
+  },
   "license": "MIT",
   "type": "module",
   "bin": {
+    "app-xray": "dist/cli.js",
     "xray": "dist/cli.js",
     "rea-bench": "dist/bench/cli.js"
   },
   "files": [
     "dist",
+    "!dist/**/*.map",
     "data"
   ],
   "engines": {
@@ -21,7 +43,8 @@
     "test": "vitest run",
     "xray": "node dist/cli.js",
     "bench": "npm run build && node bench/run-corpus.mjs",
-    "prepare": "tsc -p tsconfig.json"
+    "prepare": "tsc -p tsconfig.json",
+    "prepublishOnly": "npm run build && npm test"
   },
   "dependencies": {
     "rea-agents": "6.7.0"

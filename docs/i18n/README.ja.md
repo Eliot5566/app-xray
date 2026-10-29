@@ -11,7 +11,7 @@ App X-Ray はデスクトップアプリ、Android APK、Go／Rust のプログ�
 インストール不要（Node.js 22 以上）：
 
 ```bash
-npx github:Eliot5566/app-xray scan /path/to/app
+npx app-xray scan /path/to/app
 # xray-out/report.html を開く
 ```
 

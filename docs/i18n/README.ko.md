@@ -11,7 +11,7 @@ App X-Ray는 데스크톱 앱, Android APK, Go／Rust 프로그램, AI 모델 �
 설치 없이 실행(Node.js 22 이상):
 
 ```bash
-npx github:Eliot5566/app-xray scan /path/to/app
+npx app-xray scan /path/to/app
 # xray-out/report.html 열기
 ```
 

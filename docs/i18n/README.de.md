@@ -11,7 +11,7 @@ Die Analyse übernimmt [REA (Reverse Engineer Anything)](https://github.com/morl
 Ohne Installation (Node.js 22 oder neuer):
 
 ```bash
-npx github:Eliot5566/app-xray scan /pfad/zur/app
+npx app-xray scan /pfad/zur/app
 # xray-out/report.html öffnen
 ```
 

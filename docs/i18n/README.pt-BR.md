@@ -11,7 +11,7 @@ A análise é feita pelo [REA (Reverse Engineer Anything)](https://github.com/mo
 Sem instalação (Node.js 22 ou mais recente):
 
 ```bash
-npx github:Eliot5566/app-xray scan /caminho/do/app
+npx app-xray scan /caminho/do/app
 # abra xray-out/report.html
 ```
 
