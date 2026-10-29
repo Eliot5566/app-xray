@@ -18,7 +18,7 @@ read.
 No install step needed (Node.js 22 or newer):
 
 ```bash
-npx github:Eliot5566/app-xray scan /path/to/app
+npx app-xray scan /path/to/app
 # open xray-out/report.html
 ```
 

@@ -11,7 +11,7 @@ El análisis lo hace [REA (Reverse Engineer Anything)](https://github.com/morlut
 Sin instalación (Node.js 22 o superior):
 
 ```bash
-npx github:Eliot5566/app-xray scan /ruta/a/la/app
+npx app-xray scan /ruta/a/la/app
 # abre xray-out/report.html
 ```
 

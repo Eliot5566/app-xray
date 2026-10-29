@@ -11,7 +11,7 @@ App X-Ray 可以扫描桌面 App、Android APK、Go／Rust 程序或 AI 模型�
 无需安装（Node.js 22 及以上）：
 
 ```bash
-npx github:Eliot5566/app-xray scan /path/to/app
+npx app-xray scan /path/to/app
 # 打开 xray-out/report.html
 ```
 
