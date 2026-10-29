@@ -20,6 +20,10 @@ export interface XrayDiff {
   services: SetChange;
   remotePages: SetChange;
   ipcChannels: SetChange;
+  /** Android permissions (APK reports). */
+  permissions: SetChange;
+  /** Libraries whose version changed (Go/Rust executables), as "name before → after". */
+  versions: string[];
   findings: SetChange;
   fuses: Array<{ name: string; before: string | null; after: string | null }>;
   nativeAddonBindings: { before: number; after: number };
@@ -48,6 +52,8 @@ export function diffReports(before: XrayReport, after: XrayReport): XrayDiff {
       before.ipcChannels.map((c) => c.channel),
       after.ipcChannels.map((c) => c.channel),
     ),
+    permissions: change(before.android?.permissions ?? [], after.android?.permissions ?? []),
+    versions: versionChanges(before, after),
     findings,
     fuses: fuseNames
       .map((name) => ({ name, before: fuseState(before, name), after: fuseState(after, name) }))
@@ -60,9 +66,10 @@ export function diffReports(before: XrayReport, after: XrayReport): XrayDiff {
 }
 
 export function isEmptyDiff(d: XrayDiff): boolean {
-  const sets = [d.hosts, d.urls, d.packages, d.services, d.remotePages, d.ipcChannels, d.findings];
+  const sets = [d.hosts, d.urls, d.packages, d.services, d.remotePages, d.ipcChannels, d.permissions, d.findings];
   return (
     d.electron === null &&
+    d.versions.length === 0 &&
     d.fuses.length === 0 &&
     d.nativeAddonBindings.before === d.nativeAddonBindings.after &&
     sets.every((s) => s.added.length === 0 && s.removed.length === 0)
@@ -70,7 +77,7 @@ export function isEmptyDiff(d: XrayDiff): boolean {
 }
 
 /** Conditions a CI job can fail on, e.g. --fail-on new-host,new-service. */
-export const FAIL_CONDITIONS = ["new-host", "new-service", "new-package", "new-serious", "electron-downgrade"] as const;
+export const FAIL_CONDITIONS = ["new-host", "new-service", "new-package", "new-permission", "new-serious", "electron-downgrade"] as const;
 export type FailCondition = (typeof FAIL_CONDITIONS)[number];
 
 export function failures(d: XrayDiff, on: FailCondition[]): string[] {
@@ -78,6 +85,7 @@ export function failures(d: XrayDiff, on: FailCondition[]): string[] {
   if (on.includes("new-host") && d.hosts.added.length) out.push(`new hosts: ${d.hosts.added.join(", ")}`);
   if (on.includes("new-service") && d.services.added.length) out.push(`new services: ${d.services.added.join(", ")}`);
   if (on.includes("new-package") && d.packages.added.length) out.push(`new packages: ${d.packages.added.join(", ")}`);
+  if (on.includes("new-permission") && d.permissions.added.length) out.push(`new permissions: ${d.permissions.added.join(", ")}`);
   if (on.includes("new-serious") && d.newSerious.length) out.push(`new findings: ${d.newSerious.join("; ")}`);
   if (on.includes("electron-downgrade") && d.electron && compareVersions(d.electron.after, d.electron.before) < 0) {
     out.push(`Electron downgraded from ${d.electron.before} to ${d.electron.after}`);
@@ -92,7 +100,7 @@ const LIST_LIMIT = 25;
 export function renderMarkdown(d: XrayDiff, opts: { title?: string; reportUrl?: string } = {}): string {
   const lines = [MARKER, `### ${opts.title ?? `App X-Ray: what changed in ${d.app}`}`, ""];
   if (isEmptyDiff(d)) {
-    lines.push("No change in servers, packages, services, window settings or Electron version.");
+    lines.push("No change in servers, packages, services, permissions, window settings or framework version.");
   } else {
     if (d.newSerious.length) {
       lines.push(`**New high or medium findings:** ${d.newSerious.map(md).join("; ")}`, "");
@@ -105,11 +113,13 @@ export function renderMarkdown(d: XrayDiff, opts: { title?: string; reportUrl?: 
       ["Packages", d.packages],
       ["Remote pages in windows", d.remotePages],
       ["IPC channels", d.ipcChannels],
+      ["Android permissions", d.permissions],
       ["Findings", d.findings],
     ];
     for (const [label, s] of rows) {
       if (s.added.length || s.removed.length) lines.push(`| ${label} | ${list(s.added)} | ${list(s.removed)} |`);
     }
+    if (d.versions.length) lines.push(`| Library versions | ${list(d.versions)} | |`);
     for (const f of d.fuses) lines.push(`| Fuse ${md(f.name)} | ${md(f.after ?? "absent")} | ${md(f.before ?? "absent")} |`);
     if (d.nativeAddonBindings.before !== d.nativeAddonBindings.after) {
       lines.push(`| Native add-on bindings | ${d.nativeAddonBindings.after} | ${d.nativeAddonBindings.before} |`);
@@ -156,7 +166,14 @@ function urlsOf(r: XrayReport): string[] {
 }
 
 function servicesOf(r: XrayReport): string[] {
-  return r.findings.filter((f) => f.ruleId === "known-services").map((f) => f.title);
+  return r.findings.filter((f) => f.ruleId === "known-services" || f.ruleId === "android-sdks").map((f) => f.title);
+}
+
+function versionChanges(before: XrayReport, after: XrayReport): string[] {
+  const old = new Map((before.dependencies ?? []).map((d) => [d.name, d.version]));
+  return (after.dependencies ?? [])
+    .filter((d) => old.has(d.name) && old.get(d.name) !== d.version)
+    .map((d) => `${d.name} ${old.get(d.name) ?? "?"} → ${d.version ?? "?"}`);
 }
 
 /** The package a module specifier comes from: "lodash/fp" → "lodash", "@a/b/c" → "@a/b". Relative imports are the app's own code. */
@@ -168,10 +185,14 @@ export function packageOf(specifier: string): string | null {
 }
 
 function packagesOf(r: XrayReport): string[] {
-  return r.modules.flatMap((m) => {
-    const p = packageOf(m.specifier);
-    return p ? [p] : [];
-  });
+  return [
+    ...r.modules.flatMap((m) => {
+      const p = packageOf(m.specifier);
+      return p ? [p] : [];
+    }),
+    // Go modules and Rust crates compiled into an executable.
+    ...(r.dependencies ?? []).map((d) => d.name),
+  ];
 }
 
 function compareVersions(a: string | null, b: string | null): number {
