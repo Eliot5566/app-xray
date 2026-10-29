@@ -1,6 +1,5 @@
 import { createHash } from "node:crypto";
 import { createReadStream, readFileSync } from "node:fs";
-import { hostOf } from "../core/normalize.js";
 import {
   XRAY_SCHEMA,
   type AndroidFacts,
@@ -9,6 +8,7 @@ import {
   type Framework,
   type XrayReport,
 } from "../core/schema.js";
+import { collectUrls } from "../core/urls.js";
 import { loadData } from "../rules/data.js";
 import { resolveStrings } from "./arsc.js";
 import { parseAxml, type XmlElement } from "./axml.js";
@@ -72,29 +72,6 @@ const SENSITIVE_PERMISSIONS = new Set([
   "READ_PRIVILEGED_PHONE_STATE",
 ]);
 
-// XML namespaces and schema URLs that every APK carries; they are identifiers, not addresses.
-const NAMESPACE_HOSTS = new Set([
-  "schemas.android.com",
-  "www.w3.org",
-  "ns.adobe.com",
-  "xml.org",
-  "xmlpull.org",
-  "apache.org",
-  "www.apache.org",
-  "java.sun.com",
-  "xml.apache.org",
-  "purl.org",
-  "schemas.microsoft.com",
-  "schemas.xmlsoap.org",
-  "ns.google.com",
-  "dashif.org",
-  "aomedia.org",
-  "javax.xml.xmlconstants",
-  "default.url",
-]);
-
-const URL_RE = /https?:\/\/[A-Za-z0-9.-]+(?::\d+)?(?:\/[^\s"'<>\\{}|^`]*)?/g;
-
 // Cross-platform frameworks, recognized by the files they ship.
 const FRAMEWORK_MARKERS: Array<{ kind: Framework["kind"]; test: (name: string) => boolean; source: string }> = [
   { kind: "flutter", test: (n) => /^lib\/[^/]+\/libflutter\.so$/.test(n) || n.startsWith("assets/flutter_assets/"), source: "libflutter.so" },
@@ -129,15 +106,7 @@ export async function analyzeApk(file: string, opts: ApkOptions): Promise<XrayRe
     for (const entry of dexEntries) {
       const dex = readDex(await zip.read(entry));
       for (const c of dex.classes) classes.add(c);
-      for (const s of dex.strings) {
-        if (!s.includes("http")) continue;
-        for (const [match] of s.matchAll(URL_RE)) {
-          const url = match.replace(/[.,;:)\]]+$/, "");
-          const host = hostOf(url);
-          if (!host || !host.includes(".") || NAMESPACE_HOSTS.has(host) || endpoints.has(url)) continue;
-          endpoints.set(url, { url, host, mechanism: "dex-string", location: { path: entry.name } });
-        }
-      }
+      for (const s of dex.strings) collectUrls(s, endpoints, "dex-string", entry.name);
     }
 
     const names = zip.entries.map((e) => e.name);

@@ -27,7 +27,9 @@ export type FrameworkKind =
   | "unity"
   | "xamarin"
   | "cordova"
-  | "capacitor";
+  | "capacitor"
+  | "go"
+  | "rust";
 
 export interface Framework {
   kind: FrameworkKind;
@@ -118,6 +120,36 @@ export interface AndroidFacts {
   dexClasses: number;
 }
 
+/** A library compiled into a native binary, from its embedded build metadata. */
+export interface Dependency {
+  ecosystem: "go" | "cargo";
+  name: string;
+  version: string | null;
+  /** Go replace directive target, when the module was swapped for another path or version. */
+  replacedBy: string | null;
+}
+
+/** Facts about a native executable (Go or Rust). */
+export interface NativeFacts {
+  format: string;
+  architecture: string | null;
+  language: "go" | "rust" | null;
+  /** Go build settings (CGO_ENABLED, vcs.revision, -ldflags…). */
+  buildSettings: Record<string, string>;
+}
+
+/** A published advisory that matches a dependency version (from OSV, with --osv). */
+export interface Vulnerability {
+  id: string;
+  aliases: string[];
+  ecosystem: Dependency["ecosystem"];
+  package: string;
+  version: string;
+  summary: string | null;
+  /** The advisory's own rating when it has one, e.g. "HIGH" or "MODERATE". */
+  severity: string | null;
+}
+
 export type Severity = "info" | "low" | "medium" | "high";
 
 export interface Finding {
@@ -153,6 +185,12 @@ export interface XrayReport {
   nativeAddonBindings: number;
   /** Present for Android apps (APK input). */
   android?: AndroidFacts;
+  /** Present for native executables. */
+  native?: NativeFacts;
+  /** Libraries compiled into a native executable. */
+  dependencies?: Dependency[];
+  /** Advisories matching those libraries; absent unless the scan asked OSV. */
+  vulnerabilities?: Vulnerability[];
   /** Electron fuses of the packaged executable; null when there is no executable to read. */
   fuses: FuseState[] | null;
   findings: Finding[];

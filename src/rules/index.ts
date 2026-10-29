@@ -4,6 +4,7 @@ import { electronFusesRule } from "./electronFuses.js";
 import { electronSupportRule } from "./electronSupport.js";
 import { localStorageRule, nativeAddonsRule } from "./ingredients.js";
 import { dynamicIpcChannelsRule, ipcSenderValidationRule } from "./ipc.js";
+import { goBuildRule, goSupportRule, knownVulnerabilitiesRule } from "./native.js";
 import { plainHttpRule } from "./plainHttp.js";
 import { remoteContentRule } from "./remoteContent.js";
 import { trackersRule } from "./trackers.js";
@@ -27,6 +28,9 @@ export function defaultRules(): Rule[] {
     androidSdksRule,
     androidPermissionsRule,
     androidManifestRule,
+    goSupportRule(),
+    goBuildRule,
+    knownVulnerabilitiesRule,
   ];
 }
 

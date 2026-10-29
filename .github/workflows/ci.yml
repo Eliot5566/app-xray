@@ -27,3 +27,11 @@ jobs:
         run: |
           mkdir -p reports && cp -r xray-out reports/demo-app
           node dist/cli.js gallery reports --out site --quiet && test -s site/index.html && test -s site/apps/demo-app/index.html
+      - name: Scan a Go executable end to end
+        run: |
+          mkdir -p /tmp/gohello && cd /tmp/gohello
+          printf 'package main\n\nimport "fmt"\n\nfunc main() { fmt.Println("https://api.example.com/v1") }\n' > main.go
+          go mod init example.com/hello && go build -o hello .
+          cd "$GITHUB_WORKSPACE"
+          node dist/cli.js scan /tmp/gohello/hello --out go-out --quiet
+          node -e 'const r=require("./go-out/xray.json"); if (r.frameworks[0]?.kind!=="go" || !r.endpoints.some(e=>e.host==="api.example.com")) process.exit(1)'

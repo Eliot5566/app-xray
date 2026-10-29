@@ -1,0 +1,13 @@
+{
+  "note": "Go major releases. The Go team supports each major release until two newer majors exist (https://go.dev/doc/devel/release#policy). Snapshot; update when a new major ships (February and August).",
+  "asOf": "2026-10-28",
+  "releases": [
+    { "version": "1.27", "date": "2026-08" },
+    { "version": "1.26", "date": "2026-02" },
+    { "version": "1.25", "date": "2025-08" },
+    { "version": "1.24", "date": "2025-02" },
+    { "version": "1.23", "date": "2024-08" },
+    { "version": "1.22", "date": "2024-02" },
+    { "version": "1.21", "date": "2023-08" }
+  ]
+}
