@@ -11,13 +11,23 @@ export interface SourceLocation {
 }
 
 export interface Engine {
-  name: "rea-agents";
+  /** "rea-agents", or "app-xray" for inputs it reads itself (APKs). */
+  name: "rea-agents" | "app-xray";
   version: string;
   operation: string;
   evidenceId: string | null;
 }
 
-export type FrameworkKind = "electron" | "chromium";
+export type FrameworkKind =
+  | "electron"
+  | "chromium"
+  | "android"
+  | "flutter"
+  | "react-native"
+  | "unity"
+  | "xamarin"
+  | "cordova"
+  | "capacitor";
 
 export interface Framework {
   kind: FrameworkKind;
@@ -79,6 +89,35 @@ export interface StorageUse {
   location: SourceLocation | null;
 }
 
+export interface AndroidSdk {
+  name: string;
+  category: string;
+  /** Classes of this SDK found in the app's DEX files. */
+  classes: number;
+  /** One matching class, as evidence. */
+  example: string;
+}
+
+/** Facts from an APK's manifest and DEX string tables. */
+export interface AndroidFacts {
+  package: string | null;
+  versionCode: number | null;
+  minSdk: number | null;
+  targetSdk: number | null;
+  permissions: string[];
+  /** Permissions Android treats as dangerous (runtime-granted) or special. */
+  sensitivePermissions: string[];
+  components: { activities: number; services: number; receivers: number; providers: number; exported: number };
+  debuggable: boolean;
+  allowBackup: boolean | null;
+  usesCleartextTraffic: boolean | null;
+  networkSecurityConfig: boolean;
+  usesAdvertisingId: boolean;
+  sdks: AndroidSdk[];
+  nativeLibs: string[];
+  dexClasses: number;
+}
+
 export type Severity = "info" | "low" | "medium" | "high";
 
 export interface Finding {
@@ -112,6 +151,8 @@ export interface XrayReport {
   ipc: IpcStats;
   storage: StorageUse[];
   nativeAddonBindings: number;
+  /** Present for Android apps (APK input). */
+  android?: AndroidFacts;
   /** Electron fuses of the packaged executable; null when there is no executable to read. */
   fuses: FuseState[] | null;
   findings: Finding[];

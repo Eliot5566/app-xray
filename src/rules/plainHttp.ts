@@ -6,7 +6,9 @@ export const plainHttpRule: Rule = {
   id: "plain-http",
   description: "Remote addresses reached over unencrypted HTTP.",
   check(report) {
-    const hits = report.endpoints.filter((e) => e.url.startsWith("http://") && e.host !== null && !LOCAL.has(e.host));
+    // DEX string tables are full of http:// identifiers (licenses, specs), so only code-level
+    // addresses count here; an APK's cleartext setting is checked by the android rules.
+    const hits = report.endpoints.filter((e) => e.mechanism !== "dex-string" && e.url.startsWith("http://") && e.host !== null && !LOCAL.has(e.host));
     if (hits.length === 0) return [];
     return [
       {

@@ -3,7 +3,7 @@
 **An ingredients and privacy label for any app, in one command.**
 **任何 App 的成分標示，一個指令產生。**
 
-App X-Ray scans a desktop app and writes a single, shareable HTML report: which
+App X-Ray scans a desktop app or an Android APK and writes a single, shareable HTML report: which
 framework and version it ships, whether that version still gets security fixes,
 which analytics or crash-reporting services it contains, which network addresses
 it talks to, and how its windows are configured. Every line links back to the file
@@ -28,6 +28,7 @@ npx github:Eliot5566/app-xray scan /path/to/app
 | An installed app on macOS | the bundle, e.g. `/Applications/Signal.app` |
 | An `app.asar` | the file itself |
 | A source checkout | the app's folder in the repo |
+| An Android app | the `.apk` file |
 
 For an installed app, only the app inside it (`resources/app.asar` or
 `resources/app`) is analyzed, not Electron itself; the Electron and Chromium
@@ -123,6 +124,25 @@ Electron support data is a snapshot in `data/electron-releases.json`; service
 signatures live in `data/trackers.json`. Both are plain JSON so they are easy to
 review and extend.
 
+## Android apps (APK)
+
+`xray scan app.apk` reads an APK directly, with no Java, decompiler or REA run, in
+well under a second for most apps. It reports:
+
+| Rule | What it reports |
+| --- | --- |
+| `android-sdks` | Analytics, advertising, session-recording and crash-reporting SDKs compiled in, recognized by class name (`data/android-sdks.json`) |
+| `android-permissions` | Runtime and special-access permissions the app asks for, such as location, camera, contacts or SMS |
+| `android-manifest` | `debuggable` builds, cleartext HTTP allowed, a target API below Google Play's minimum, advertising ID access, backups, and components open to other apps |
+| `known-services` | Addresses of known tracking services among the URLs in the app's DEX string tables |
+
+The report also lists every literal URL in the code, all permissions, the
+component counts, native libraries, and whether the app is built with Flutter,
+React Native, Unity, Xamarin, Cordova or Capacitor. Code that runs outside DEX
+(Dart, JavaScript bundles, C#) is not analyzed, and apps shrunk with R8/ProGuard
+can hide SDKs by renaming their classes; the report says so. Split APKs and
+`.aab` bundles are not supported yet.
+
 ## Limits
 
 - Static analysis only. The app is never run. A finding means the code *contains*
@@ -151,7 +171,7 @@ The summary card bundles the [Inter](https://github.com/rsms/inter) typeface
 
 App X-Ray 用 REA 分析桌面 App，輸出一頁可分享的 HTML 報告、一張可貼到社群的摘要圖卡（card.png）和 README 徽章，內容包括框架與版本、該版本是否仍有安全更新、內嵌的分析／追蹤服務、連線網域，以及視窗安全設定。每一項都標出它來自哪個檔案的哪一行。
 
-用法：`npx github:Eliot5566/app-xray scan <App 路徑>`。`xray diff` 可以比較兩個版本，列出新增的連線網域、套件、追蹤服務與安全設定變化；也可以當 GitHub Action 使用，在每個 PR 自動留言。開源 App 的報告圖鑑在 <https://eliot5566.github.io/app-xray/>，每週一自動更新。路徑可以是 Windows／Linux 的安裝資料夾、macOS 的 .app、app.asar，或原始碼資料夾。
+用法：`npx github:Eliot5566/app-xray scan <App 路徑>`。開源 App 的報告圖鑑在 <https://eliot5566.github.io/app-xray/>，每週一自動更新。`xray diff` 可以比較兩個版本，列出新增的連線網域、套件、追蹤服務與安全設定變化；也可以當 GitHub Action 使用，在每個 PR 自動留言。路徑可以是 Windows／Linux 的安裝資料夾、macOS 的 .app、app.asar、原始碼資料夾，或 Android 的 .apk 檔。APK 不需要 Java，會列出權限、內嵌的分析／廣告／錯誤回報 SDK、程式中的網址，以及 debuggable、明文 HTTP、目標 API 版本等設定。
 
 只做靜態分析，不會執行目標 App。請只分析自己擁有或有權檢查的軟體。
 

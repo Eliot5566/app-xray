@@ -2,6 +2,7 @@
 import { mkdir, readFile, stat, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { parseArgs } from "node:util";
+import { analyzeApk, isApk, toolVersion } from "./android/apk.js";
 import { listSourceFiles } from "./core/batches.js";
 import { candidateExecutables, detectElectronVersion } from "./core/electronVersion.js";
 import { normalize } from "./core/normalize.js";
@@ -27,7 +28,8 @@ const USAGE = `Usage: xray scan <app-path> [--out <dir>] [--rea-json <file>] [--
        xray diff <before> <after> [--format md|json] [--fail-on <conditions>]
 
 scan
-  <app-path>         An installed app folder or .app bundle, an app.asar, or a source checkout
+  <app-path>         An installed app folder or .app bundle, an app.asar, an Android .apk,
+                     or a source checkout
   --out <dir>        Where to write the report files (default: ./xray-out)
   --rea-json <file>  Reuse a saved "rea analyze-javascript-application --json" result
   --all-files        In a source checkout, also analyze tests, stories and build tooling
@@ -91,19 +93,30 @@ async function main(argv: string[]): Promise<number> {
     if (!values.quiet) process.stderr.write(`${msg}\n`);
   };
 
+  const targetStat = await stat(target).catch(() => null);
+  if (!targetStat) throw new UsageError(`No such file or directory: ${target}`);
+
+  if (isApk(target) && targetStat.isFile()) {
+    // APKs are read natively; REA's Android path needs Java and a JADX server.
+    const report = applyRules(
+      await analyzeApk(path.resolve(target), { toolVersion: toolVersion() }).catch((err: unknown) => {
+        throw new UsageError(`${target} could not be read as an APK: ${err instanceof Error ? err.message : err}`);
+      }),
+    );
+    await writeOutputs(report, path.resolve(values.out ?? "xray-out"), log);
+    return 0;
+  }
+
   const reaVersion = await installedReaVersion();
   if (reaVersion !== PINNED_REA_VERSION) {
     log(`warning: app-xray is tested with rea-agents ${PINNED_REA_VERSION}, found ${reaVersion}`);
   }
 
-  const targetStat = await stat(target).catch(() => null);
-  if (!targetStat) throw new UsageError(`No such file or directory: ${target}`);
-
   const scope = values["rea-json"] ? null : await prepareScope(target, { allFiles: values["all-files"] });
   if (scope?.payload) log(`packaged app: analyzing ${scope.payload}`);
   if (scope && !scope.analyzedPath.endsWith(".asar")) {
     if (!targetStat.isDirectory()) {
-      throw new UsageError(`${target} is not a folder or an .asar file. Point xray at an installed app folder, an app.asar, or a source checkout.`);
+      throw new UsageError(`${target} is not a folder, an .asar or an .apk file. Point xray at an installed app folder, an app.asar, an APK, or a source checkout.`);
     }
     if ((await listSourceFiles(scope.analyzedPath)).length === 0) {
       await scope.cleanup();
@@ -126,7 +139,13 @@ async function main(argv: string[]): Promise<number> {
     normalize({ evidence, reaVersion, electron, inputPath: path.resolve(target), excludedFiles: scope?.excludedFiles ?? 0, fuses }),
   );
 
-  const outDir = path.resolve(values.out ?? "xray-out");
+  await writeOutputs(report, path.resolve(values.out ?? "xray-out"), log);
+  return 0;
+}
+
+class UsageError extends Error {}
+
+async function writeOutputs(report: XrayReport, outDir: string, log: (msg: string) => void): Promise<void> {
   await mkdir(outDir, { recursive: true });
   await writeFile(path.join(outDir, "xray.json"), `${JSON.stringify(report, null, 2)}\n`);
   await writeFile(path.join(outDir, "report.html"), renderHtml(report));
@@ -138,12 +157,9 @@ async function main(argv: string[]): Promise<number> {
   await writeFile(path.join(outDir, "badge.svg"), renderBadge(report));
 
   const high = report.findings.filter((f) => f.severity === "high").length;
-  log(`${report.target.name ?? target}: ${report.findings.length} findings (${high} high)`);
+  log(`${report.target.name ?? report.target.inputPath}: ${report.findings.length} findings (${high} high)`);
   log(`wrote ${path.join(outDir, "report.html")}`);
-  return 0;
 }
-
-class UsageError extends Error {}
 
 async function readReport(p: string): Promise<XrayReport> {
   const s = await stat(p).catch(() => null);

@@ -14,18 +14,28 @@ export function renderCard(report: XrayReport): string {
   const version = report.target.version ? truncate(report.target.version, 18) : "";
   const electron = report.frameworks.find((f) => f.kind === "electron");
   const support = report.findings.find((f) => f.ruleId === "electron-support");
-  const subtitle = electron
-    ? `Electron ${electron.version ?? "version unknown"}${support && electron.version ? ` · ${supportNote(support)}` : ""}`
-    : "Framework not identified";
+  const android = report.android;
+  const subtitle = android
+    ? androidSubtitle(report)
+    : electron
+      ? `Electron ${electron.version ?? "version unknown"}${support && electron.version ? ` · ${supportNote(support)}` : ""}`
+      : "Framework not identified";
 
   const hosts = new Set(report.endpoints.flatMap((e) => (e.host ? [e.host] : []))).size;
-  const services = report.findings.filter((f) => f.ruleId === "known-services").length;
+  const services = report.findings.filter((f) => f.ruleId === "known-services" || f.ruleId === "android-sdks").length;
   const stats: Array<[number, string]> = [
     // Most endpoints are paths or computed URLs, so the named hosts are counted separately.
     [report.endpoints.length, `endpoints · ${hosts} host${hosts === 1 ? "" : "s"}`],
     [services, services === 1 ? "known tracker or SDK" : "known trackers / SDKs"],
-    [report.remotePages.length, report.remotePages.length === 1 ? "remote page shown" : "remote pages shown"],
-    [report.ipcChannels.length, report.ipcChannels.length === 1 ? "IPC channel" : "IPC channels"],
+    ...((android
+      ? [
+          [android.sensitivePermissions.length, android.sensitivePermissions.length === 1 ? "sensitive permission" : "sensitive permissions"],
+          [android.components.exported, android.components.exported === 1 ? "open component" : "open components"],
+        ]
+      : [
+          [report.remotePages.length, report.remotePages.length === 1 ? "remote page shown" : "remote pages shown"],
+          [report.ipcChannels.length, report.ipcChannels.length === 1 ? "IPC channel" : "IPC channels"],
+        ]) as Array<[number, string]>),
   ];
 
   const counts = { high: 0, medium: 0, low: 0, info: 0 };
@@ -80,6 +90,25 @@ function findingLine(f: Finding, y: number): string {
   <circle cx="8" cy="16" r="7" fill="${COLORS[f.severity]}"/>
   <text x="28" y="24" font-size="23" fill="#1d1c1a">${esc(truncate(f.title, 78))}</text>
 </g>`;
+}
+
+const FRAMEWORK_NAMES: Partial<Record<string, string>> = {
+  flutter: "Flutter",
+  "react-native": "React Native",
+  unity: "Unity",
+  xamarin: "Xamarin",
+  cordova: "Cordova",
+  capacitor: "Capacitor",
+};
+
+/** "Android · targets API 33 · min API 21 · Flutter" */
+export function androidSubtitle(report: XrayReport): string {
+  const a = report.android!;
+  const parts = ["Android"];
+  if (a.targetSdk !== null) parts.push(`targets API ${a.targetSdk}`);
+  if (a.minSdk !== null) parts.push(`min API ${a.minSdk}`);
+  for (const f of report.frameworks) if (FRAMEWORK_NAMES[f.kind]) parts.push(FRAMEWORK_NAMES[f.kind]!);
+  return parts.join(" · ");
 }
 
 function supportNote(f: Finding): string {

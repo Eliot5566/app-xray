@@ -2,7 +2,7 @@ import { mkdir, readdir, readFile, writeFile } from "node:fs/promises";
 import path from "node:path";
 import type { Severity, XrayReport } from "./core/schema.js";
 import { renderBadge } from "./report/badge.js";
-import { renderCard } from "./report/card.js";
+import { androidSubtitle, renderCard } from "./report/card.js";
 import { esc, previewTags, renderHtml } from "./report/html.js";
 import { renderPng } from "./report/png.js";
 
@@ -33,6 +33,8 @@ export interface GalleryApp {
   name: string;
   version: string | null;
   electron: string | null;
+  /** Platform line shown under the name, e.g. "Electron 37.2.4" or "Android · targets API 33". */
+  platform: string;
   source: string | null;
   counts: Record<Severity, number>;
 }
@@ -87,6 +89,9 @@ export async function buildGallery(reportsDir: string, outDir: string, options: 
       name: shown.target.name ?? entry.name,
       version: report.target.version,
       electron: report.frameworks.find((f) => f.kind === "electron")?.version ?? null,
+      platform: report.android
+        ? androidSubtitle(report)
+        : `Electron ${report.frameworks.find((f) => f.kind === "electron")?.version ?? "unknown"}`,
       source,
       counts,
     });
@@ -116,14 +121,14 @@ export function slugify(name: string): string {
 
 function renderIndex(apps: GalleryApp[], ctx: { base?: string; repo: string; now: Date }): string {
   const title = "App X-Ray gallery";
-  const description = `Ingredients and privacy labels for ${apps.length} open-source desktop apps: framework versions, trackers, network addresses and window security settings.`;
+  const description = `Ingredients and privacy labels for ${apps.length} open-source apps: framework versions, trackers and SDKs, network addresses and security settings.`;
   const tiles = apps
     .map(
       (a) => `<li class="tile" data-name="${esc(a.name.toLowerCase())}">
   <a href="apps/${a.slug}/">
     <img src="apps/${a.slug}/card.png" alt="" width="1200" height="630" loading="lazy">
     <span class="name">${esc(a.name)}${a.version ? ` <span class="ver">${esc(a.version)}</span>` : ""}</span>
-    <span class="meta">Electron ${esc(a.electron ?? "unknown")}</span>
+    <span class="meta">${esc(a.platform)}</span>
     <span class="pills">${ORDER.filter((s) => s !== "info")
       .map((s) => `<span class="pill sev-${s}${a.counts[s] ? " on" : ""}">${a.counts[s]} ${s}</span>`)
       .join("")}</span>

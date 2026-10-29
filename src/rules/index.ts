@@ -1,4 +1,5 @@
 import type { Finding, Severity, XrayReport } from "../core/schema.js";
+import { androidManifestRule, androidPermissionsRule, androidSdksRule } from "./android.js";
 import { electronFusesRule } from "./electronFuses.js";
 import { electronSupportRule } from "./electronSupport.js";
 import { localStorageRule, nativeAddonsRule } from "./ingredients.js";
@@ -23,6 +24,9 @@ export function defaultRules(): Rule[] {
     plainHttpRule,
     localStorageRule,
     nativeAddonsRule,
+    androidSdksRule,
+    androidPermissionsRule,
+    androidManifestRule,
   ];
 }
 
