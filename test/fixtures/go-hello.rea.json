@@ -1,0 +1,129 @@
+{
+ "evidence_id": "ev_5e82af5580b729e26e7246de6cd9383b0de5c5be24ac900c6422e9b2a0519082",
+ "subject": {
+  "name": "hello",
+  "digest": {
+   "sha256": "41e0d2389e4b747fc853349e332501a2304fe0c1ac81482a6bc3610a1810d0fc"
+  },
+  "local_path": "/tmp/hello",
+  "format": "elf",
+  "architecture": "x86_64"
+ },
+ "provider": {
+  "id": "go-build-info",
+  "name": "REA Go build-information reader",
+  "version": "1"
+ },
+ "analysis_profile": null,
+ "predicate_type": "rea.analysis",
+ "operation": "inspect_go_binary",
+ "parameters": {
+  "path": "/tmp/hello"
+ },
+ "raw_result": null,
+ "normalized_result": {
+  "artifact": {
+   "path": "/tmp/hello",
+   "sha256": "41e0d2389e4b747fc853349e332501a2304fe0c1ac81482a6bc3610a1810d0fc",
+   "bytes": 2209319
+  },
+  "format": "elf",
+  "architecture": "amd64",
+  "bits": 64,
+  "byte_order": "little",
+  "build_info": {
+   "header_offset": 1392640,
+   "encoding": "inline",
+   "go_version": "go1.24.7",
+   "version_location": {
+    "offset": 1392673,
+    "bytes": 8
+   },
+   "module_location": {
+    "offset": 1392683,
+    "bytes": 276
+   },
+   "module": {
+    "path": "example.com/hello",
+    "main": {
+     "path": "example.com/hello",
+     "version": "(devel)",
+     "sum": "",
+     "replacement": null
+    },
+    "dependencies": [],
+    "settings": [
+     {
+      "key": "-buildmode",
+      "value": "exe"
+     },
+     {
+      "key": "-compiler",
+      "value": "gc"
+     },
+     {
+      "key": "CGO_ENABLED",
+      "value": "1"
+     },
+     {
+      "key": "CGO_CFLAGS",
+      "value": ""
+     },
+     {
+      "key": "CGO_CPPFLAGS",
+      "value": ""
+     },
+     {
+      "key": "CGO_CXXFLAGS",
+      "value": ""
+     },
+     {
+      "key": "CGO_LDFLAGS",
+      "value": ""
+     },
+     {
+      "key": "GOARCH",
+      "value": "amd64"
+     },
+     {
+      "key": "GOOS",
+      "value": "linux"
+     },
+     {
+      "key": "GOAMD64",
+      "value": "v1"
+     }
+    ],
+    "unparsed_lines": [],
+    "unparsed_line_bytes_base64": [],
+    "complete": true
+   }
+  },
+  "limitations": [
+   "Embedded build metadata is observed file content, not proof of compiler identity, dependency authenticity or runtime behavior.",
+   "Only Go build information is inspected; function names, source mappings, type metadata and decompiled code are not recovered.",
+   "Resource guards bound stable artifact reads and cumulative header searches to 256 MiB each, aggregate embedded strings to 1 MiB, structural table decoding to 16 MiB and complete metadata payloads to 8 MiB; these are not operating-system memory or CPU limits."
+  ]
+ },
+ "confidence": "observed",
+ "authority": "shipped-artifact",
+ "environment": null,
+ "limitations": [
+  "Embedded build metadata is observed file content, not proof of compiler identity, dependency authenticity or runtime behavior.",
+  "Only Go build information is inspected; function names, source mappings, type metadata and decompiled code are not recovered.",
+  "Resource guards bound stable artifact reads and cumulative header searches to 256 MiB each, aggregate embedded strings to 1 MiB, structural table decoding to 16 MiB and complete metadata payloads to 8 MiB; these are not operating-system memory or CPU limits."
+ ],
+ "relationship_coverage": null,
+ "locations": [
+  {
+   "kind": "artifact-path",
+   "path": "/tmp/hello"
+  },
+  {
+   "kind": "file-offset-range",
+   "start": 1392640,
+   "end": 1392672
+  }
+ ],
+ "evidence_links": []
+}

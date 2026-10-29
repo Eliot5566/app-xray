@@ -11,13 +11,25 @@ export interface SourceLocation {
 }
 
 export interface Engine {
-  name: "rea-agents";
+  /** "rea-agents", or "app-xray" for inputs it reads itself (APKs). */
+  name: "rea-agents" | "app-xray";
   version: string;
   operation: string;
   evidenceId: string | null;
 }
 
-export type FrameworkKind = "electron" | "chromium";
+export type FrameworkKind =
+  | "electron"
+  | "chromium"
+  | "android"
+  | "flutter"
+  | "react-native"
+  | "unity"
+  | "xamarin"
+  | "cordova"
+  | "capacitor"
+  | "go"
+  | "rust";
 
 export interface Framework {
   kind: FrameworkKind;
@@ -79,6 +91,90 @@ export interface StorageUse {
   location: SourceLocation | null;
 }
 
+export interface AndroidSdk {
+  name: string;
+  category: string;
+  /** Classes of this SDK found in the app's DEX files. */
+  classes: number;
+  /** One matching class, as evidence. */
+  example: string;
+}
+
+/** Facts from an APK's manifest and DEX string tables. */
+export interface AndroidFacts {
+  package: string | null;
+  versionCode: number | null;
+  minSdk: number | null;
+  targetSdk: number | null;
+  permissions: string[];
+  /** Permissions Android treats as dangerous (runtime-granted) or special. */
+  sensitivePermissions: string[];
+  components: { activities: number; services: number; receivers: number; providers: number; exported: number };
+  debuggable: boolean;
+  allowBackup: boolean | null;
+  usesCleartextTraffic: boolean | null;
+  networkSecurityConfig: boolean;
+  usesAdvertisingId: boolean;
+  sdks: AndroidSdk[];
+  nativeLibs: string[];
+  dexClasses: number;
+}
+
+/** A library compiled into a native binary, from its embedded build metadata. */
+export interface Dependency {
+  ecosystem: "go" | "cargo";
+  name: string;
+  version: string | null;
+  /** Go replace directive target, when the module was swapped for another path or version. */
+  replacedBy: string | null;
+}
+
+/** Facts about a native executable (Go or Rust). */
+export interface NativeFacts {
+  format: string;
+  architecture: string | null;
+  language: "go" | "rust" | null;
+  /** Go build settings (CGO_ENABLED, vcs.revision, -ldflags…). */
+  buildSettings: Record<string, string>;
+}
+
+/** A published advisory that matches a dependency version (from OSV, with --osv). */
+export interface Vulnerability {
+  id: string;
+  aliases: string[];
+  ecosystem: Dependency["ecosystem"];
+  package: string;
+  version: string;
+  summary: string | null;
+  /** The advisory's own rating when it has one, e.g. "HIGH" or "MODERATE". */
+  severity: string | null;
+}
+
+/** One model weights file. */
+export interface ModelFile {
+  path: string;
+  format: "gguf" | "safetensors" | "pytorch" | "pickle" | "unknown";
+  bytes: number;
+  /** Total weights (product of tensor shapes), when the header lists tensors. */
+  parameters: number | null;
+  tensors: number | null;
+  architecture: string | null;
+  /** GGUF quantization (Q4_K_M…) or the safetensors dtypes. */
+  quantization: string | null;
+  contextLength: number | null;
+  license: string | null;
+  /** GGUF: the Jinja chat template the runtime renders for every prompt. */
+  chatTemplate: string | null;
+  /** Pickle-based files: callables imported when the file is loaded. */
+  imports: Array<{ name: string; risk: "dangerous" | "unexpected" | "safe" }>;
+  /** Set when the file could not be fully parsed. */
+  error: string | null;
+}
+
+export interface ModelFacts {
+  files: ModelFile[];
+}
+
 export type Severity = "info" | "low" | "medium" | "high";
 
 export interface Finding {
@@ -112,6 +208,16 @@ export interface XrayReport {
   ipc: IpcStats;
   storage: StorageUse[];
   nativeAddonBindings: number;
+  /** Present for Android apps (APK input). */
+  android?: AndroidFacts;
+  /** Present for model files (GGUF, safetensors, PyTorch/pickle). */
+  model?: ModelFacts;
+  /** Present for native executables. */
+  native?: NativeFacts;
+  /** Libraries compiled into a native executable. */
+  dependencies?: Dependency[];
+  /** Advisories matching those libraries; absent unless the scan asked OSV. */
+  vulnerabilities?: Vulnerability[];
   /** Electron fuses of the packaged executable; null when there is no executable to read. */
   fuses: FuseState[] | null;
   findings: Finding[];

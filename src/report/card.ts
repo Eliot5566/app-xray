@@ -14,19 +14,49 @@ export function renderCard(report: XrayReport): string {
   const version = report.target.version ? truncate(report.target.version, 18) : "";
   const electron = report.frameworks.find((f) => f.kind === "electron");
   const support = report.findings.find((f) => f.ruleId === "electron-support");
-  const subtitle = electron
-    ? `Electron ${electron.version ?? "version unknown"}${support && electron.version ? ` · ${supportNote(support)}` : ""}`
-    : "Framework not identified";
+  const android = report.android;
+  const native = report.native;
+  const model = report.model;
+  const subtitle = model
+    ? modelSubtitle(report)
+    : android
+    ? androidSubtitle(report)
+    : native
+      ? nativeSubtitle(report)
+      : electron
+      ? `Electron ${electron.version ?? "version unknown"}${support && electron.version ? ` · ${supportNote(support)}` : ""}`
+      : "Framework not identified";
 
   const hosts = new Set(report.endpoints.flatMap((e) => (e.host ? [e.host] : []))).size;
-  const services = report.findings.filter((f) => f.ruleId === "known-services").length;
-  const stats: Array<[number, string]> = [
-    // Most endpoints are paths or computed URLs, so the named hosts are counted separately.
-    [report.endpoints.length, `endpoints · ${hosts} host${hosts === 1 ? "" : "s"}`],
-    [services, services === 1 ? "known tracker or SDK" : "known trackers / SDKs"],
-    [report.remotePages.length, report.remotePages.length === 1 ? "remote page shown" : "remote pages shown"],
-    [report.ipcChannels.length, report.ipcChannels.length === 1 ? "IPC channel" : "IPC channels"],
-  ];
+  const services = report.findings.filter((f) => f.ruleId === "known-services" || f.ruleId === "android-sdks").length;
+  const stats: Array<[number | string, string]> = model
+    ? [
+        [model.files.length, model.files.length === 1 ? "model file" : "model files"],
+        [formatCount(model.files.reduce((n, f) => n + (f.parameters ?? 0), 0)), "parameters"],
+        [model.files.reduce((n, f) => n + f.imports.filter((i) => i.risk !== "safe").length, 0), "risky pickle imports"],
+        [report.endpoints.length, report.endpoints.length === 1 ? "address in template" : "addresses in templates"],
+      ]
+    : [
+        // Most endpoints are paths or computed URLs, so the named hosts are counted separately.
+        [report.endpoints.length, `endpoints · ${hosts} host${hosts === 1 ? "" : "s"}`],
+        [services, services === 1 ? "known tracker or SDK" : "known trackers / SDKs"],
+        ...((native
+          ? [
+              [report.dependencies?.length ?? 0, native.language === "rust" ? "crates" : "modules"],
+              report.vulnerabilities
+                ? [report.vulnerabilities.length, report.vulnerabilities.length === 1 ? "known vulnerability" : "known vulnerabilities"]
+                : ["—", "CVEs not checked"],
+            ]
+          : android
+          ? [
+              [android.sensitivePermissions.length, android.sensitivePermissions.length === 1 ? "sensitive permission" : "sensitive permissions"],
+              [android.components.exported, android.components.exported === 1 ? "open component" : "open components"],
+            ]
+          : [
+              [report.remotePages.length, report.remotePages.length === 1 ? "remote page shown" : "remote pages shown"],
+              [report.ipcChannels.length, report.ipcChannels.length === 1 ? "IPC channel" : "IPC channels"],
+            ]) as Array<[number | string, string]>),
+      ];
 
   const counts = { high: 0, medium: 0, low: 0, info: 0 };
   for (const f of report.findings) counts[f.severity]++;
@@ -80,6 +110,58 @@ function findingLine(f: Finding, y: number): string {
   <circle cx="8" cy="16" r="7" fill="${COLORS[f.severity]}"/>
   <text x="28" y="24" font-size="23" fill="#1d1c1a">${esc(truncate(f.title, 78))}</text>
 </g>`;
+}
+
+const FRAMEWORK_NAMES: Partial<Record<string, string>> = {
+  flutter: "Flutter",
+  "react-native": "React Native",
+  unity: "Unity",
+  xamarin: "Xamarin",
+  cordova: "Cordova",
+  capacitor: "Capacitor",
+};
+
+/** 8030261248 → "8.0B" */
+export function formatCount(n: number): string {
+  if (n >= 1e9) return `${(n / 1e9).toFixed(1)}B`;
+  if (n >= 1e6) return `${(n / 1e6).toFixed(1)}M`;
+  if (n >= 1e3) return `${(n / 1e3).toFixed(1)}K`;
+  return String(n);
+}
+
+/** "GGUF · llama · 8.0B parameters · Q4_K_M" */
+export function modelSubtitle(report: XrayReport): string {
+  const files = report.model!.files;
+  const formats = [...new Set(files.map((f) => (f.format === "gguf" ? "GGUF" : f.format === "pytorch" ? "PyTorch" : f.format)))];
+  const parts = files.length === 1 ? [formats[0]!] : [`${files.length} files`, formats.join(", ")];
+  const arch = files.find((f) => f.architecture)?.architecture;
+  if (arch) parts.push(arch);
+  const params = files.reduce((n, f) => n + (f.parameters ?? 0), 0);
+  if (params) parts.push(`${formatCount(params)} parameters`);
+  const quant = files.length === 1 ? files[0]!.quantization : null;
+  if (quant) parts.push(quant);
+  return parts.join(" · ");
+}
+
+/** "Go 1.26.1 · linux/amd64 · ELF" */
+export function nativeSubtitle(report: XrayReport): string {
+  const n = report.native!;
+  const lang = report.frameworks.find((f) => f.kind === "go" || f.kind === "rust");
+  const parts = [lang ? `${lang.kind === "go" ? "Go" : "Rust"}${lang.version ? ` ${lang.version}` : ""}` : "Native executable"];
+  const os = n.buildSettings["GOOS"];
+  if (os || n.architecture) parts.push([os, n.architecture].filter(Boolean).join("/"));
+  parts.push(n.format === "macho" ? "Mach-O" : n.format.toUpperCase());
+  return parts.join(" · ");
+}
+
+/** "Android · targets API 33 · min API 21 · Flutter" */
+export function androidSubtitle(report: XrayReport): string {
+  const a = report.android!;
+  const parts = ["Android"];
+  if (a.targetSdk !== null) parts.push(`targets API ${a.targetSdk}`);
+  if (a.minSdk !== null) parts.push(`min API ${a.minSdk}`);
+  for (const f of report.frameworks) if (FRAMEWORK_NAMES[f.kind]) parts.push(FRAMEWORK_NAMES[f.kind]!);
+  return parts.join(" · ");
 }
 
 function supportNote(f: Finding): string {

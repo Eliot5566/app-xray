@@ -3,11 +3,13 @@
 **An ingredients and privacy label for any app, in one command.**
 **任何 App 的成分標示，一個指令產生。**
 
-App X-Ray scans a desktop app and writes a single, shareable HTML report: which
-framework and version it ships, whether that version still gets security fixes,
-which analytics or crash-reporting services it contains, which network addresses
-it talks to, and how its windows are configured. Every line links back to the file
-and line it came from.
+English · [繁體中文](docs/i18n/README.zh-TW.md) · [简体中文](docs/i18n/README.zh-CN.md) · [日本語](docs/i18n/README.ja.md) · [한국어](docs/i18n/README.ko.md) · [Español](docs/i18n/README.es.md) · [Français](docs/i18n/README.fr.md) · [Deutsch](docs/i18n/README.de.md) · [Português](docs/i18n/README.pt-BR.md)
+
+App X-Ray scans a desktop app, an Android APK, a Go or Rust program, or AI model
+files, and writes a single, shareable HTML report: which framework and version it
+ships, whether that version still gets security fixes, which analytics, advertising
+or crash-reporting SDKs it contains, which network addresses it talks to, and the
+settings that weaken its security. Every line links back to the file it came from.
 
 It is built on [REA (Reverse Engineer Anything)](https://github.com/morluto/rea),
 which does the analysis. App X-Ray turns REA's evidence into something anyone can
@@ -28,6 +30,9 @@ npx github:Eliot5566/app-xray scan /path/to/app
 | An installed app on macOS | the bundle, e.g. `/Applications/Signal.app` |
 | An `app.asar` | the file itself |
 | A source checkout | the app's folder in the repo |
+| An Android app | the `.apk` file |
+| A Go or Rust program | the executable (ELF, PE or Mach-O) |
+| AI model weights | a `.gguf`, `.safetensors`, `.pt`/`.pth`/`.bin`/`.ckpt` or `.pkl` file, or a folder of them |
 
 For an installed app, only the app inside it (`resources/app.asar` or
 `resources/app`) is analyzed, not Electron itself; the Electron and Chromium
@@ -40,24 +45,23 @@ Output in `xray-out/`:
 - `card.png` and `card.svg`: a 1200×630 summary image for social posts
 - `badge.svg`: a README badge, e.g. `app x-ray | 2 high`
 
-## Compare two versions
+## What it finds
 
-`xray diff` compares two reports of the same app and lists what a reviewer should
-look at: new server hosts, new packages, new trackers or SDKs, new high or medium
-findings, changed Electron fuses and Electron upgrades or downgrades.
+| Input | Highlights |
+| --- | --- |
+| Electron apps | Electron/Chromium version and support status, fuses, `webPreferences` that weaken isolation, remote pages, IPC handlers without sender checks, trackers, plain HTTP |
+| Android APKs | Analytics/ad/session-recording/crash SDKs, sensitive permissions, debuggable builds, cleartext HTTP, outdated target API, advertising ID, exported components |
+| Go / Rust executables | Compiled-in libraries and versions, unsupported Go releases, uncommitted-source builds; known vulnerabilities with `--osv` |
+| Model files | Pickles that run code when loaded, non-standard pickle imports, GGUF chat templates that escape their sandbox or hide addresses and text |
 
-```bash
-xray scan old-release/ --out before
-xray scan new-release/ --out after
-xray diff before after                       # markdown, ready for a PR comment
-xray diff before after --format json
-xray diff before after --fail-on new-host,new-service   # exit 1 if either happened
-```
+Every rule, the report format and the limits are in the [guide](docs/en/guide.md)
+([繁體中文](docs/zh-TW/guide.md)).
 
-### GitHub Action
+## Compare versions in CI
 
-Add this to an Electron app's repository to get a comment on every pull request
-that changes what the app talks to or ships:
+`xray diff before/ after/` lists new hosts, packages, SDKs, permissions, library
+versions and findings between two scans. As a GitHub Action it comments on every
+pull request:
 
 ```yaml
 # .github/workflows/app-xray.yml
@@ -72,12 +76,11 @@ jobs:
       - uses: actions/checkout@v4
       - uses: Eliot5566/app-xray@main
         with:
-          path: .                       # the folder with the app's package.json
-          fail-on: new-service          # optional: new-host, new-service, new-package, new-serious, electron-downgrade
+          path: .                 # the folder with the app's package.json
+          fail-on: new-service    # optional
 ```
 
-The action scans the pull request's base commit and its head, posts one comment
-(updated on each push) and writes the same summary to the job page.
+See [Compare two versions](docs/en/guide.md#compare-two-versions) for every option.
 
 ## Gallery
 
@@ -93,53 +96,10 @@ npm run bench                                   # scans the corpus into bench-ou
 node dist/cli.js gallery bench-out --out site   # writes site/index.html
 ```
 
+[REA-Bench](bench/rea-bench/) turns the same reports into questions for coding
+agents and grades their answers, to compare agents with and without REA's tools.
+
 To work on App X-Ray itself: `npm install`, `npm test`, `node dist/cli.js scan …`.
-
-## What it checks today (v0.7)
-
-| Rule | What it reports |
-| --- | --- |
-| `electron-support` | Electron (and bundled Chromium) version, and whether it is in the supported window (latest three majors) |
-| `electron-fuses` | Packaged apps: fuses left permissive, such as `RunAsNode` or disabled ASAR integrity checks |
-| `electron-web-preferences` | `nodeIntegration`, `contextIsolation`, `webSecurity`, `sandbox` and similar settings that weaken isolation |
-| `remote-content` | Remote pages loaded into app windows, raised to high when some window also weakens isolation |
-| `ipc-sender-validation` | Main-process IPC handlers with no check of which page sent the message |
-| `dynamic-ipc-channels` | IPC calls whose channel name is chosen at runtime |
-| `known-services` | Addresses of known analytics, session-recording, advertising and crash-reporting services |
-| `plain-http` | Remote addresses reached over unencrypted HTTP |
-| `local-data` | Where the app stores data on the device (informational) |
-| `native-addons` | Native add-ons the app loads (informational) |
-
-When `<app-path>` is inside a source checkout (a git repository or package
-workspace), tests, stories, build tooling and minified or generated bundles are
-left out, and the report says how many. Pass `--all-files` to keep them.
-
-Apps with 400 or more source files are analyzed in parallel batches, one per
-CPU core, and the results are merged. This is faster and keeps more facts than a
-single run, which can hit REA's result budget; the report notes that links
-between batches, such as an IPC send and its handler, may be incomplete.
-
-Electron support data is a snapshot in `data/electron-releases.json`; service
-signatures live in `data/trackers.json`. Both are plain JSON so they are easy to
-review and extend.
-
-## Limits
-
-- Static analysis only. The app is never run. A finding means the code *contains*
-  something, not that it *does* it at runtime.
-- Only literal values are seen. Addresses built at runtime are missed.
-- Electron version comes from `package.json`, macOS `Electron Framework.framework`,
-  the user-agent string inside a packaged Windows/Linux executable (which also
-  gives the bundled Chromium version), or Electron's `version` file.
-- Tested with `rea-agents` 6.7.0 (pinned).
-
-## Corpus benchmark
-
-`bench/corpus.json` lists 20 open-source Electron apps. `npm run bench` clones
-each one, scans it and writes `bench-out/summary.md` with timings and findings.
-
-[REA-Bench](bench/rea-bench/) turns those reports into questions for coding agents
-about the same apps and grades the answers, to compare agents with and without REA.
 
 ## Responsible use
 
@@ -149,14 +109,6 @@ describe components and facts; they never include the app's code.
 
 The summary card bundles the [Inter](https://github.com/rsms/inter) typeface
 (`data/fonts`, SIL Open Font License 1.1).
-
-## 中文說明
-
-App X-Ray 用 REA 分析桌面 App，輸出一頁可分享的 HTML 報告、一張可貼到社群的摘要圖卡（card.png）和 README 徽章，內容包括框架與版本、該版本是否仍有安全更新、內嵌的分析／追蹤服務、連線網域，以及視窗安全設定。每一項都標出它來自哪個檔案的哪一行。
-
-用法：`npx github:Eliot5566/app-xray scan <App 路徑>`。`xray diff` 可以比較兩個版本，列出新增的連線網域、套件、追蹤服務與安全設定變化；也可以當 GitHub Action 使用，在每個 PR 自動留言。開源 App 的報告圖鑑在 <https://eliot5566.github.io/app-xray/>，每週一自動更新。[REA-Bench](bench/rea-bench/) 用這些報告出題測試 AI 代理人，比較有無 REA 工具的差距。路徑可以是 Windows／Linux 的安裝資料夾、macOS 的 .app、app.asar，或原始碼資料夾。
-
-只做靜態分析，不會執行目標 App。請只分析自己擁有或有權檢查的軟體。
 
 ## License
 

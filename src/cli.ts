@@ -2,6 +2,10 @@
 import { mkdir, readFile, stat, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { parseArgs } from "node:util";
+import { analyzeApk, isApk, toolVersion } from "./android/apk.js";
+import { analyzeBinary, binaryFormat } from "./native/binary.js";
+import { queryOsv } from "./native/osv.js";
+import { analyzeModels, isModelFile, modelFilesIn } from "./models/model.js";
 import { listSourceFiles } from "./core/batches.js";
 import { candidateExecutables, detectElectronVersion } from "./core/electronVersion.js";
 import { normalize } from "./core/normalize.js";
@@ -22,15 +26,19 @@ import { renderHtml } from "./report/html.js";
 import { renderPng } from "./report/png.js";
 import { applyRules } from "./rules/index.js";
 
-const USAGE = `Usage: xray scan <app-path> [--out <dir>] [--rea-json <file>] [--all-files] [--quiet]
+const USAGE = `Usage: xray scan <app-path> [--out <dir>] [--rea-json <file>] [--all-files] [--osv] [--quiet]
        xray gallery <reports-dir> [--out <dir>] [--base-url <url>]
        xray diff <before> <after> [--format md|json] [--fail-on <conditions>]
 
 scan
-  <app-path>         An installed app folder or .app bundle, an app.asar, or a source checkout
+  <app-path>         An installed app folder or .app bundle, an app.asar, an Android .apk,
+                     a Go or Rust executable, a model file (.gguf, .safetensors, .pt,
+                     .bin, .pkl…) or a folder of them, or a source checkout
   --out <dir>        Where to write the report files (default: ./xray-out)
   --rea-json <file>  Reuse a saved "rea analyze-javascript-application --json" result
   --all-files        In a source checkout, also analyze tests, stories and build tooling
+  --osv              Go/Rust executables: look up their libraries in the OSV vulnerability
+                     database (sends package names and versions to api.osv.dev)
   --quiet            No progress output
 
 gallery
@@ -54,6 +62,7 @@ async function main(argv: string[]): Promise<number> {
       "fail-on": { type: "string" },
       "rea-json": { type: "string" },
       "all-files": { type: "boolean", default: false },
+      osv: { type: "boolean", default: false },
       quiet: { type: "boolean", default: false },
       help: { type: "boolean", short: "h", default: false },
     },
@@ -91,19 +100,46 @@ async function main(argv: string[]): Promise<number> {
     if (!values.quiet) process.stderr.write(`${msg}\n`);
   };
 
+  const targetStat = await stat(target).catch(() => null);
+  if (!targetStat) throw new UsageError(`No such file or directory: ${target}`);
+
+  if (isApk(target) && targetStat.isFile()) {
+    // APKs are read natively; REA's Android path needs Java and a JADX server.
+    const report = applyRules(
+      await analyzeApk(path.resolve(target), { toolVersion: toolVersion() }).catch((err: unknown) => {
+        throw new UsageError(`${target} could not be read as an APK: ${err instanceof Error ? err.message : err}`);
+      }),
+    );
+    await writeOutputs(report, path.resolve(values.out ?? "xray-out"), log);
+    return 0;
+  }
+
+  const models = targetStat.isFile() ? (isModelFile(target) ? [target] : []) : await modelFilesIn(target);
+  if (models.length > 0) {
+    // Model weights are read natively: headers only, and pickles are walked, never loaded.
+    const report = applyRules(await analyzeModels(path.resolve(target), models.map((m) => path.resolve(m)), { toolVersion: toolVersion() }));
+    await writeOutputs(report, path.resolve(values.out ?? "xray-out"), log);
+    return 0;
+  }
+
   const reaVersion = await installedReaVersion();
   if (reaVersion !== PINNED_REA_VERSION) {
     log(`warning: app-xray is tested with rea-agents ${PINNED_REA_VERSION}, found ${reaVersion}`);
   }
 
-  const targetStat = await stat(target).catch(() => null);
-  if (!targetStat) throw new UsageError(`No such file or directory: ${target}`);
+  if (targetStat.isFile() && (await binaryFormat(target))) {
+    let report = await analyzeBinary(path.resolve(target), reaVersion);
+    if (values.osv) report = await withOsv(report, log);
+    else if (report.dependencies?.length) log("note: pass --osv to check these libraries against the OSV vulnerability database");
+    await writeOutputs(applyRules(report), path.resolve(values.out ?? "xray-out"), log);
+    return 0;
+  }
 
   const scope = values["rea-json"] ? null : await prepareScope(target, { allFiles: values["all-files"] });
   if (scope?.payload) log(`packaged app: analyzing ${scope.payload}`);
   if (scope && !scope.analyzedPath.endsWith(".asar")) {
     if (!targetStat.isDirectory()) {
-      throw new UsageError(`${target} is not a folder or an .asar file. Point xray at an installed app folder, an app.asar, or a source checkout.`);
+      throw new UsageError(`${target} is not a folder, an .asar, an .apk or an executable. Point xray at an installed app folder, an app.asar, an APK, a Go or Rust executable, or a source checkout.`);
     }
     if ((await listSourceFiles(scope.analyzedPath)).length === 0) {
       await scope.cleanup();
@@ -126,7 +162,25 @@ async function main(argv: string[]): Promise<number> {
     normalize({ evidence, reaVersion, electron, inputPath: path.resolve(target), excludedFiles: scope?.excludedFiles ?? 0, fuses }),
   );
 
-  const outDir = path.resolve(values.out ?? "xray-out");
+  await writeOutputs(report, path.resolve(values.out ?? "xray-out"), log);
+  return 0;
+}
+
+class UsageError extends Error {}
+
+async function withOsv(report: XrayReport, log: (msg: string) => void): Promise<XrayReport> {
+  const deps = report.dependencies ?? [];
+  const go = report.frameworks.find((f) => f.kind === "go")?.version ?? null;
+  log(`checking ${deps.length + (go ? 1 : 0)} libraries against OSV`);
+  try {
+    return { ...report, vulnerabilities: await queryOsv(deps, go) };
+  } catch (err) {
+    log(`warning: OSV lookup failed, so known vulnerabilities are not listed: ${err instanceof Error ? err.message : err}`);
+    return { ...report, limitations: [...report.limitations, "The OSV vulnerability lookup failed, so known vulnerabilities are not listed."] };
+  }
+}
+
+async function writeOutputs(report: XrayReport, outDir: string, log: (msg: string) => void): Promise<void> {
   await mkdir(outDir, { recursive: true });
   await writeFile(path.join(outDir, "xray.json"), `${JSON.stringify(report, null, 2)}\n`);
   await writeFile(path.join(outDir, "report.html"), renderHtml(report));
@@ -138,12 +192,9 @@ async function main(argv: string[]): Promise<number> {
   await writeFile(path.join(outDir, "badge.svg"), renderBadge(report));
 
   const high = report.findings.filter((f) => f.severity === "high").length;
-  log(`${report.target.name ?? target}: ${report.findings.length} findings (${high} high)`);
+  log(`${report.target.name ?? report.target.inputPath}: ${report.findings.length} findings (${high} high)`);
   log(`wrote ${path.join(outDir, "report.html")}`);
-  return 0;
 }
-
-class UsageError extends Error {}
 
 async function readReport(p: string): Promise<XrayReport> {
   const s = await stat(p).catch(() => null);

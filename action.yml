@@ -16,7 +16,7 @@ inputs:
     description: Post or update a comment on the pull request with the changes.
     default: "true"
   fail-on:
-    description: "Fail the job on any of: new-host, new-service, new-package, new-serious, electron-downgrade (comma-separated)."
+    description: "Fail the job on any of: new-host, new-service, new-package, new-permission, new-serious, electron-downgrade (comma-separated)."
     default: ""
   github-token:
     description: Token used to comment on the pull request.

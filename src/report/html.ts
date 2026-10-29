@@ -1,4 +1,5 @@
-import type { Finding, SourceLocation, XrayReport } from "../core/schema.js";
+import type { AndroidFacts, Dependency, Finding, ModelFacts, NativeFacts, Vulnerability, SourceLocation, XrayReport } from "../core/schema.js";
+import { androidSubtitle, formatCount, modelSubtitle, nativeSubtitle } from "./card.js";
 
 export interface PageMeta {
   /** Absolute URL of this page, for link previews. */
@@ -32,7 +33,15 @@ ${previewTags(`${title} · App X-Ray`, summaryLine(report), meta)}<style>${CSS}<
 <header>
   <p class="eyebrow">${meta.back ? `<a href="${esc(meta.back.href)}">${esc(meta.back.label)}</a> · ` : ""}App X-Ray</p>
   <h1>${esc(title)}${report.target.version ? ` <span class="ver">${esc(report.target.version)}</span>` : ""}</h1>
-  <p class="meta">${electron ? `Electron ${esc(electron.version ?? "version unknown")} · ` : ""}${report.endpoints.length} addresses · ${report.modules.length} modules · ${report.ipcChannels.length} IPC channels</p>
+  <p class="meta">${
+    report.model
+      ? esc(modelSubtitle(report))
+      : report.native
+      ? `${esc(nativeSubtitle(report))} · ${report.dependencies?.length ?? 0} libraries · ${report.endpoints.length} addresses`
+      : report.android
+      ? `${esc(androidSubtitle(report))} · ${report.android.package ? `${esc(report.android.package)} · ` : ""}${report.endpoints.length} addresses · ${report.android.permissions.length} permissions`
+      : `${electron ? `Electron ${esc(electron.version ?? "version unknown")} · ` : ""}${report.endpoints.length} addresses · ${report.modules.length} modules · ${report.ipcChannels.length} IPC channels`
+  }</p>
   <ul class="tally">
     ${(["high", "medium", "low", "info"] as const).map((s) => `<li class="sev-${s}"><b>${counts[s]}</b> ${s}</li>`).join("")}
   </ul>
@@ -52,7 +61,37 @@ ${previewTags(`${title} · App X-Ray`, summaryLine(report), meta)}<style>${CSS}<
   )}
 </section>
 
-<section>
+${report.model ? modelSections(report.model) : report.native ? nativeSections(report.native, report.dependencies ?? [], report.vulnerabilities) : report.android ? androidSections(report.android) : desktopSections(report, loc)}
+
+${
+  meta.badgeMarkdown
+    ? `<section>
+  <h2>README badge</h2>
+  <p>Maintainers can show this report in their README:</p>
+  <pre class="snippet">${esc(meta.badgeMarkdown)}</pre>
+</section>
+
+`
+    : ""
+}<section>
+  <h2>What this report cannot see</h2>
+  <ul class="limits">${report.limitations.map((l) => `<li>${esc(l)}</li>`).join("")}</ul>
+</section>
+
+<footer>
+  Generated ${esc(report.generatedAt)} by app-xray from ${esc(report.engine.name)} ${esc(report.engine.version)}
+  (${esc(report.engine.operation)}${report.engine.evidenceId ? `, evidence ${esc(report.engine.evidenceId.slice(0, 15))}…` : ""}).
+  Static analysis only: the app was not run. Findings describe what the code contains, not what it does at runtime.
+</footer>
+</main>
+<script type="application/json" id="xray-data">${jsonForScript(report)}</script>
+</body>
+</html>
+`;
+}
+
+function desktopSections(report: XrayReport, loc: (l: SourceLocation | null) => Cell): string {
+  return `<section>
   <h2>Modules</h2>
   ${table(
     ["Module", "Used by"],
@@ -101,31 +140,113 @@ ${previewTags(`${title} · App X-Ray`, summaryLine(report), meta)}<style>${CSS}<
   }
 </section>
 
-${
-  meta.badgeMarkdown
-    ? `<section>
-  <h2>README badge</h2>
-  <p>Maintainers can show this report in their README:</p>
-  <pre class="snippet">${esc(meta.badgeMarkdown)}</pre>
-</section>
-
-`
-    : ""
-}<section>
-  <h2>What this report cannot see</h2>
-  <ul class="limits">${report.limitations.map((l) => `<li>${esc(l)}</li>`).join("")}</ul>
-</section>
-
-<footer>
-  Generated ${esc(report.generatedAt)} by app-xray from ${esc(report.engine.name)} ${esc(report.engine.version)}
-  (${esc(report.engine.operation)}${report.engine.evidenceId ? `, evidence ${esc(report.engine.evidenceId.slice(0, 15))}…` : ""}).
-  Static analysis only: the app was not run. Findings describe what the code contains, not what it does at runtime.
-</footer>
-</main>
-<script type="application/json" id="xray-data">${jsonForScript(report)}</script>
-</body>
-</html>
 `;
+}
+
+function modelSections(m: ModelFacts): string {
+  const imports = m.files.flatMap((f) => f.imports.map((i) => [f.path, i.name, i.risk] as Cell[]));
+  const templates = m.files.filter((f) => f.chatTemplate);
+  return `<section>
+  <h2>Model files</h2>
+  ${table(
+    ["File", "Format", "Size", "Parameters", "Architecture", "Weights", "Context", "License"],
+    m.files.map((f) => [
+      f.path,
+      f.format,
+      formatBytes(f.bytes),
+      f.parameters === null ? "—" : formatCount(f.parameters),
+      f.architecture ?? "—",
+      f.quantization ?? "—",
+      f.contextLength === null ? "—" : String(f.contextLength),
+      f.license ?? "—",
+    ]),
+    "No model files.",
+  )}
+</section>
+
+<section>
+  <h2>Pickle imports</h2>
+  ${table(["File", "Callable", "Risk"], imports, "No pickle-based files, so nothing runs when the weights are loaded.")}
+</section>
+${templates
+  .map(
+    (f) => `
+<section>
+  <h2>Chat template: ${esc(f.path)}</h2>
+  <pre class="snippet">${esc(f.chatTemplate!.length > 6000 ? `${f.chatTemplate!.slice(0, 6000)}\n…` : f.chatTemplate!)}</pre>
+</section>`,
+  )
+  .join("")}`;
+}
+
+function formatBytes(n: number): string {
+  if (n >= 1024 ** 3) return `${(n / 1024 ** 3).toFixed(1)} GB`;
+  if (n >= 1024 ** 2) return `${(n / 1024 ** 2).toFixed(1)} MB`;
+  return `${Math.ceil(n / 1024)} KB`;
+}
+
+function nativeSections(n: NativeFacts, deps: Dependency[], vulns: Vulnerability[] | undefined): string {
+  const advisories = (d: Dependency) =>
+    vulns === undefined ? "not checked" : vulns.filter((v) => v.package === d.name && v.version === d.version).map((v) => v.id).join(", ");
+  return `<section>
+  <h2>Libraries compiled in</h2>
+  ${table(
+    ["Library", "Version", "Replaced by", "Known vulnerabilities"],
+    deps.map((d) => [d.name, d.version ?? "—", d.replacedBy ?? "", advisories(d)]),
+    n.language ? "No libraries listed in the build metadata." : "This binary carries no Go or cargo-auditable library list.",
+  )}
+</section>
+
+<section>
+  <h2>Build</h2>
+  ${table(
+    ["Setting", "Value"],
+    [["Format", n.format], ["Architecture", n.architecture ?? "—"], ...Object.entries(n.buildSettings)],
+    "",
+  )}
+</section>`;
+}
+
+function androidSections(a: AndroidFacts): string {
+  const c = a.components;
+  return `<section>
+  <h2>Permissions</h2>
+  ${table(
+    ["Permission", "Sensitive"],
+    a.permissions.map((p) => [p, a.sensitivePermissions.includes(p) ? "yes" : ""]),
+    "The app asks for no permissions.",
+  )}
+</section>
+
+<section>
+  <h2>SDKs compiled in</h2>
+  ${table(
+    ["SDK", "Category", "Classes", "Example class"],
+    a.sdks.map((s) => [s.name, s.category, String(s.classes), s.example]),
+    "No known analytics, advertising, session-recording or crash-reporting SDK found.",
+  )}
+</section>
+
+<section>
+  <h2>Manifest and packaging</h2>
+  ${table(
+    ["Fact", "Value"],
+    [
+      ["Package", a.package ?? "—"],
+      ["Version code", a.versionCode === null ? "—" : String(a.versionCode)],
+      ["Target / minimum API", `${a.targetSdk ?? "?"} / ${a.minSdk ?? "?"}`],
+      ["Components", `${c.activities} activities, ${c.services} services, ${c.receivers} receivers, ${c.providers} providers (${c.exported} open to other apps)`],
+      ["Debuggable", a.debuggable ? "yes" : "no"],
+      ["Backup allowed", a.allowBackup === null ? "default (yes)" : a.allowBackup ? "yes" : "no"],
+      ["Cleartext HTTP", a.usesCleartextTraffic === null ? "default" : a.usesCleartextTraffic ? "allowed" : "blocked"],
+      ["Network security config", a.networkSecurityConfig ? "yes" : "no"],
+      ["Advertising ID", a.usesAdvertisingId ? "can read it" : "no sign of it"],
+      ["DEX classes", String(a.dexClasses)],
+      ["Native libraries", a.nativeLibs.join(", ") || "none"],
+    ],
+    "",
+  )}
+</section>`;
 }
 
 /** One line for link previews: the severity tally and the Electron version. */
@@ -133,7 +254,8 @@ export function summaryLine(report: XrayReport): string {
   const counts = countBySeverity(report.findings);
   const electron = report.frameworks.find((f) => f.kind === "electron");
   const tally = (["high", "medium", "low"] as const).map((s) => `${counts[s]} ${s}`).join(", ");
-  return `${electron ? `Electron ${electron.version ?? "version unknown"}. ` : ""}Findings: ${tally}. Static analysis with REA.`;
+  const platform = report.model ? `${modelSubtitle(report)}. ` : report.native ? `${nativeSubtitle(report)}. ` : report.android ? `${androidSubtitle(report)}. ` : electron ? `Electron ${electron.version ?? "version unknown"}. ` : "";
+  return `${platform}Findings: ${tally}. Static analysis with ${report.engine.name === "rea-agents" ? "REA" : "app-xray"}.`;
 }
 
 /** Open Graph and Twitter tags, so a shared link shows the summary card. */

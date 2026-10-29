@@ -1,12 +1,15 @@
 import type { Rule } from "./types.js";
 
+const STRING_TABLE = new Set(["dex-string", "binary-string", "chat-template"]);
 const LOCAL = new Set(["localhost", "127.0.0.1", "[::1]", "0.0.0.0"]);
 
 export const plainHttpRule: Rule = {
   id: "plain-http",
   description: "Remote addresses reached over unencrypted HTTP.",
   check(report) {
-    const hits = report.endpoints.filter((e) => e.url.startsWith("http://") && e.host !== null && !LOCAL.has(e.host));
+    // String tables (DEX, native binaries) are full of http:// identifiers (licenses, specs), so only code-level
+    // addresses count here; an APK's cleartext setting is checked by the android rules.
+    const hits = report.endpoints.filter((e) => !STRING_TABLE.has(e.mechanism ?? "") && e.url.startsWith("http://") && e.host !== null && !LOCAL.has(e.host));
     if (hits.length === 0) return [];
     return [
       {

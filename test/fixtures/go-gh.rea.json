@@ -1,0 +1,162 @@
+{
+ "evidence_id": "ev_0de01367cb9baeef2e15de948ec327eaf7952118d10a00e8cdfe6e97de9b4998",
+ "subject": {
+  "name": "gh",
+  "digest": {
+   "sha256": "540cffbf2146101a713284bc06427efbf370a40756c0356e3a0f8d1e038e7122"
+  },
+  "local_path": "/usr/local/bin/gh",
+  "format": "elf",
+  "architecture": "x86_64"
+ },
+ "provider": {
+  "id": "go-build-info",
+  "name": "REA Go build-information reader",
+  "version": "1"
+ },
+ "analysis_profile": null,
+ "predicate_type": "rea.analysis",
+ "operation": "inspect_go_binary",
+ "parameters": {
+  "path": "/usr/local/bin/gh"
+ },
+ "raw_result": null,
+ "normalized_result": {
+  "artifact": {
+   "path": "/usr/local/bin/gh",
+   "sha256": "540cffbf2146101a713284bc06427efbf370a40756c0356e3a0f8d1e038e7122",
+   "bytes": 39833762
+  },
+  "format": "elf",
+  "architecture": "amd64",
+  "bits": 64,
+  "byte_order": "little",
+  "build_info": {
+   "header_offset": 38412288,
+   "encoding": "inline",
+   "go_version": "go1.26.1",
+   "version_location": {
+    "offset": 38412321,
+    "bytes": 8
+   },
+   "module_location": {
+    "offset": 38412331,
+    "bytes": 16122
+   },
+   "module": {
+    "path": "github.com/cli/cli/v2/cmd/gh",
+    "main": {
+     "path": "github.com/cli/cli/v2",
+     "version": "v2.89.0",
+     "sum": "",
+     "replacement": null
+    },
+    "dependencies": [
+     {
+      "path": "github.com/AlecAivazis/survey/v2",
+      "version": "v2.3.7",
+      "sum": "h1:6I/u8FvytdGsgonrYsVn2t8t4QiRnh6QSTqkkhIiSjQ=",
+      "replacement": null
+     },
+     {
+      "path": "golang.org/x/crypto",
+      "version": "v0.49.0",
+      "sum": "h1:+Ng2ULVvLHnJ/ZFEq4KdcDd/cfjrrjjNSXNzxg0Y4U4=",
+      "replacement": null
+     },
+     {
+      "path": "golang.org/x/net",
+      "version": "v0.52.0",
+      "sum": "h1:He/TN1l0e4mmR3QqHMT2Xab3Aj3L9qjbhRm78/6jrW0=",
+      "replacement": null
+     },
+     {
+      "path": "example.com/forked",
+      "version": "v1.0.0",
+      "sum": "",
+      "replacement": {
+       "path": "../forked",
+       "version": "",
+       "sum": ""
+      }
+     }
+    ],
+    "settings": [
+     {
+      "key": "-buildmode",
+      "value": "exe"
+     },
+     {
+      "key": "-compiler",
+      "value": "gc"
+     },
+     {
+      "key": "-ldflags",
+      "value": "-s -w -X github.com/cli/cli/v2/internal/build.Version=2.89.0 -X github.com/cli/cli/v2/internal/build.Date=2026-03-26"
+     },
+     {
+      "key": "CGO_ENABLED",
+      "value": "0"
+     },
+     {
+      "key": "GOARCH",
+      "value": "amd64"
+     },
+     {
+      "key": "GOOS",
+      "value": "linux"
+     },
+     {
+      "key": "GOAMD64",
+      "value": "v1"
+     },
+     {
+      "key": "vcs",
+      "value": "git"
+     },
+     {
+      "key": "vcs.revision",
+      "value": "b62671151b7c98852b7023dd672f5092d1c9dab0"
+     },
+     {
+      "key": "vcs.time",
+      "value": "2026-03-26T13:38:19Z"
+     },
+     {
+      "key": "vcs.modified",
+      "value": "false"
+     }
+    ],
+    "unparsed_lines": [],
+    "unparsed_line_bytes_base64": [],
+    "complete": true
+   }
+  },
+  "limitations": [
+   "Embedded build metadata is observed file content, not proof of compiler identity, dependency authenticity or runtime behavior.",
+   "Only Go build information is inspected; function names, source mappings, type metadata and decompiled code are not recovered.",
+   "Resource guards bound stable artifact reads and cumulative header searches to 256 MiB each, aggregate embedded strings to 1 MiB, structural table decoding to 16 MiB and complete metadata payloads to 8 MiB; these are not operating-system memory or CPU limits."
+  ]
+ },
+ "confidence": "observed",
+ "authority": "shipped-artifact",
+ "environment": null,
+ "limitations": [
+  "Embedded build metadata is observed file content, not proof of compiler identity, dependency authenticity or runtime behavior.",
+  "Only Go build information is inspected; function names, source mappings, type metadata and decompiled code are not recovered.",
+  "Resource guards bound stable artifact reads and cumulative header searches to 256 MiB each, aggregate embedded strings to 1 MiB, structural table decoding to 16 MiB and complete metadata payloads to 8 MiB; these are not operating-system memory or CPU limits."
+ ],
+ "relationship_coverage": null,
+ "locations": [
+  {
+   "kind": "artifact-path",
+   "path": "/usr/local/bin/gh"
+  },
+  {
+   "kind": "file-offset-range",
+   "start": 38412288,
+   "end": 38412320
+  }
+ ],
+ "evidence_links": []
+}
