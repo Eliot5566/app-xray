@@ -156,7 +156,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: Eliot5566/app-xray@main
+      - uses: Eliot5566/app-xray@590eff1b0562a606429c4e1faa3599000b9ba751
         with:
           path: .                       # the folder with the app's package.json
           fail-on: new-service          # optional: new-host, new-service, new-package, new-permission, new-serious, electron-downgrade
@@ -220,3 +220,6 @@ node dist/cli.js gallery bench-out --out site   # writes site/index.html
 each one, scans it and writes `bench-out/summary.md` with timings and findings.
 
 To work on App X-Ray itself: `npm ci`, `npm test`, `node dist/cli.js scan …`.
+
+
+When using the source checkout, run `node dist/cli.js` in place of `xray` in the commands above. Installation instructions are in the repository README.

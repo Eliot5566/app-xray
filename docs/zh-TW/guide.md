@@ -118,7 +118,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: Eliot5566/app-xray@main
+      - uses: Eliot5566/app-xray@590eff1b0562a606429c4e1faa3599000b9ba751
         with:
           path: .                 # App 的 package.json 所在資料夾
           fail-on: new-service    # 選填
@@ -170,3 +170,6 @@ node dist/cli.js gallery bench-out --out site   # 寫出 site/index.html
 `bench/corpus.json` 列了 20 個開源 Electron App。`npm run bench` 會逐一 clone、掃描，並把耗時與發現寫到 `bench-out/summary.md`。
 
 開發 App X-Ray 本身：`npm ci`、`npm test`、`node dist/cli.js scan …`。
+
+
+使用原始碼工作區時，上述指令中的 `xray` 請改成 `node dist/cli.js`；安裝步驟見根目錄 README。

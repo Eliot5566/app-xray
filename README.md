@@ -78,7 +78,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: Eliot5566/app-xray@main
+      - uses: Eliot5566/app-xray@590eff1b0562a606429c4e1faa3599000b9ba751
         with:
           path: .                 # the folder with the app's package.json
           fail-on: new-service    # optional
