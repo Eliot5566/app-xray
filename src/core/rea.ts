@@ -77,10 +77,11 @@ export function failureMessage(command: string, exitCode: number | null, stdout:
     const err = JSON.parse(stdout) as {
       message?: string;
       remediation?: { action?: string };
-      details?: { issues?: Array<{ message?: string }> };
+      details?: { reason?: string; issues?: Array<{ message?: string }> };
     };
     const detail = err.details?.issues?.map((i) => i.message).filter(Boolean).join("; ");
-    const parts = [...new Set([detail || err.message, err.remediation?.action].filter(Boolean))];
+    const reason = typeof err.details?.reason === "string" ? err.details.reason.trim() : undefined;
+    const parts = [...new Set([detail || err.message, reason, err.remediation?.action].filter(Boolean))];
     if (parts.length) return `rea ${command} failed: ${parts.join(" ")}`;
   } catch {
     // Not JSON: fall through to the exit code.

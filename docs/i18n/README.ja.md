@@ -8,10 +8,14 @@ App X-Ray はデスクトップアプリ、Android APK、Go／Rust のプログ�
 
 解析は [REA（Reverse Engineer Anything）](https://github.com/morluto/rea) が行い、App X-Ray はその証拠を誰でも読めるレポートにまとめます。
 
-インストール不要（Node.js 22 以上）：
+ソースからインストール（Node.js ^22.19.0 || ^24.11.0 || >=26.0.0）。2026-11-13 の確認時点では `app-xray` は npm 未公開です。以下の手順を使用してください：
 
 ```bash
-npx app-xray scan /path/to/app
+git clone https://github.com/Eliot5566/app-xray.git
+cd app-xray
+npm ci
+npm run build
+node dist/cli.js scan /path/to/app
 # xray-out/report.html を開く
 ```
 

@@ -4,6 +4,23 @@ on:
     branches: [main]
   pull_request:
 jobs:
+  windows:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm run typecheck
+      - run: npm test
+      - run: npm run build
+      - name: Render the saved fixture evidence offline
+        run: |
+          node dist/cli.js scan test/fixtures/demo-app --rea-json test/fixtures/demo-app.rea.json --out xray-out --quiet
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          if (-not (Test-Path xray-out/report.html)) { throw "Report was not generated" }
   test:
     runs-on: ubuntu-latest
     strategy:

@@ -169,4 +169,4 @@ node dist/cli.js gallery bench-out --out site   # 寫出 site/index.html
 
 `bench/corpus.json` 列了 20 個開源 Electron App。`npm run bench` 會逐一 clone、掃描，並把耗時與發現寫到 `bench-out/summary.md`。
 
-開發 App X-Ray 本身：`npm install`、`npm test`、`node dist/cli.js scan …`。
+開發 App X-Ray 本身：`npm ci`、`npm test`、`node dist/cli.js scan …`。

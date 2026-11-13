@@ -24,4 +24,14 @@ describe("failureMessage", () => {
   it("falls back to the exit code", () => {
     expect(failureMessage("x", 3, "not json")).toBe("rea x exited with code 3");
   });
+
+  it("shows a runtime-control reason without dumping partial observations", () => {
+    const message = failureMessage("x", 1, JSON.stringify({
+      message: "Required runtime controls are unavailable.",
+      details: { reason: "Native self-test: access denied.\r\n", partial_observation: { private: "DO_NOT_PRINT" } },
+      remediation: { action: "Check filesystem access and retry." },
+    }));
+    expect(message).toContain("Native self-test: access denied.");
+    expect(message).not.toContain("DO_NOT_PRINT");
+  });
 });

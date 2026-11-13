@@ -86,7 +86,19 @@ const PAYLOADS = [
 export async function findPayload(root: string): Promise<string | null> {
   for (const rel of PAYLOADS) {
     const candidate = path.join(root, rel);
-    if (await exists(candidate)) return candidate;
+    if (await exists(candidate)) {
+      // A case-insensitive filesystem can resolve "resources" to "Resources".
+      // Preserve the actual spelling without resolving the caller's root symlinks.
+      let actual = root;
+      for (const part of rel.split("/")) {
+        const names = await readdir(actual);
+        const spelling = names.find((name) => name === part)
+          ?? names.find((name) => name.toLowerCase() === part.toLowerCase());
+        if (!spelling) return candidate;
+        actual = path.join(actual, spelling);
+      }
+      return actual;
+    }
   }
   return null;
 }

@@ -8,10 +8,14 @@ App X-Ray analiza una app de escritorio, un APK de Android, un programa en Go o 
 
 El análisis lo hace [REA (Reverse Engineer Anything)](https://github.com/morluto/rea); App X-Ray convierte sus evidencias en algo que cualquiera puede leer.
 
-Sin instalación (Node.js 22 o superior):
+Instalar desde el código fuente (Node.js ^22.19.0 || ^24.11.0 || >=26.0.0). Verificado el 2026-11-13: `app-xray` aún no está publicado en npm. Usa estos pasos:
 
 ```bash
-npx app-xray scan /ruta/a/la/app
+git clone https://github.com/Eliot5566/app-xray.git
+cd app-xray
+npm ci
+npm run build
+node dist/cli.js scan /ruta/a/la/app
 # abre xray-out/report.html
 ```
 

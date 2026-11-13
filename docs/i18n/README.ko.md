@@ -8,10 +8,14 @@ App X-Ray는 데스크톱 앱, Android APK, Go／Rust 프로그램, AI 모델 �
 
 분석은 [REA(Reverse Engineer Anything)](https://github.com/morluto/rea)가 하고, App X-Ray는 그 증거를 누구나 읽을 수 있는 보고서로 정리합니다.
 
-설치 없이 실행(Node.js 22 이상):
+소스에서 설치합니다(Node.js ^22.19.0 || ^24.11.0 || >=26.0.0). 2026-11-13 확인 기준으로 `app-xray`는 npm에 게시되지 않았습니다. 다음 절차를 사용하세요:
 
 ```bash
-npx app-xray scan /path/to/app
+git clone https://github.com/Eliot5566/app-xray.git
+cd app-xray
+npm ci
+npm run build
+node dist/cli.js scan /path/to/app
 # xray-out/report.html 열기
 ```
 

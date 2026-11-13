@@ -219,4 +219,4 @@ node dist/cli.js gallery bench-out --out site   # writes site/index.html
 `bench/corpus.json` lists 20 open-source Electron apps. `npm run bench` clones
 each one, scans it and writes `bench-out/summary.md` with timings and findings.
 
-To work on App X-Ray itself: `npm install`, `npm test`, `node dist/cli.js scan …`.
+To work on App X-Ray itself: `npm ci`, `npm test`, `node dist/cli.js scan …`.

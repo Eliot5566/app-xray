@@ -1,11 +1,12 @@
 import { readFileSync } from "node:fs";
+import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
 import { detectElectronVersion } from "../src/core/electronVersion.js";
 import { normalize } from "../src/core/normalize.js";
 import { renderHtml } from "../src/report/html.js";
 import { applyRules } from "../src/rules/index.js";
 
-const fixtureDir = new URL("./fixtures/demo-app/", import.meta.url).pathname;
+const fixtureDir = fileURLToPath(new URL("./fixtures/demo-app/", import.meta.url));
 const evidence = JSON.parse(readFileSync(new URL("./fixtures/demo-app.rea.json", import.meta.url), "utf8"));
 const now = new Date("2026-10-22T00:00:00Z");
 

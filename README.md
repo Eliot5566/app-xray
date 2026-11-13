@@ -8,17 +8,21 @@ English · [繁體中文](docs/i18n/README.zh-TW.md) · [简体中文](docs/i18n
 App X-Ray scans a desktop app, an Android APK, a Go or Rust program, or AI model
 files, and writes a single, shareable HTML report: which framework and version it
 ships, whether that version still gets security fixes, which analytics, advertising
-or crash-reporting SDKs it contains, which network addresses it talks to, and the
+or crash-reporting SDKs it contains, which network addresses appear in its files, and the
 settings that weaken its security. Every line links back to the file it came from.
 
 It is built on [REA (Reverse Engineer Anything)](https://github.com/morluto/rea),
 which does the analysis. App X-Ray turns REA's evidence into something anyone can
 read.
 
-No install step needed (Node.js 22 or newer):
+Install from source (Node.js ^22.19.0 || ^24.11.0 || >=26.0.0). As checked on 2026-11-13, `app-xray` is not published on npm; use the source checkout below:
 
 ```bash
-npx app-xray scan /path/to/app
+git clone https://github.com/Eliot5566/app-xray.git
+cd app-xray
+npm ci
+npm run build
+node dist/cli.js scan /path/to/app
 # open xray-out/report.html
 ```
 
@@ -99,7 +103,7 @@ node dist/cli.js gallery bench-out --out site   # writes site/index.html
 [REA-Bench](bench/rea-bench/) turns the same reports into questions for coding
 agents and grades their answers, to compare agents with and without REA's tools.
 
-To work on App X-Ray itself: `npm install`, `npm test`, `node dist/cli.js scan …`.
+To work on App X-Ray itself: `npm ci`, `npm test`, `npm run build`, `node dist/cli.js scan …`.
 
 ## Responsible use
 

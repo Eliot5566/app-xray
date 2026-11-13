@@ -4,14 +4,18 @@
 
 [English](../../README.md) · 繁體中文 · [简体中文](README.zh-CN.md) · [日本語](README.ja.md) · [한국어](README.ko.md) · [Español](README.es.md) · [Français](README.fr.md) · [Deutsch](README.de.md) · [Português](README.pt-BR.md)
 
-App X-Ray 可以掃描桌面 App、Android APK、Go／Rust 程式或 AI 模型檔，輸出一頁可分享的 HTML 報告：用了哪個框架與版本、該版本是否仍有安全更新、內嵌了哪些分析／廣告／錯誤回報 SDK、會連到哪些網址，以及哪些設定削弱了安全性。每一項都標出它來自哪個檔案。
+App X-Ray 可以掃描桌面 App、Android APK、Go／Rust 程式或 AI 模型檔，輸出一頁可分享的 HTML 報告：用了哪個框架與版本、該版本是否仍有安全更新、內嵌了哪些分析／廣告／錯誤回報 SDK、檔案中出現哪些網址，以及哪些設定削弱了安全性。每一項都標出它來自哪個檔案。
 
 分析由 [REA（Reverse Engineer Anything）](https://github.com/morluto/rea) 完成，App X-Ray 把 REA 的證據整理成任何人都看得懂的報告。
 
-不需要安裝（Node.js 22 以上）：
+從原始碼安裝（Node.js ^22.19.0 || ^24.11.0 || >=26.0.0）。2026-11-13 查核時 `app-xray` 尚未發布至 npm，請使用下列原始碼流程：
 
 ```bash
-npx app-xray scan /path/to/app
+git clone https://github.com/Eliot5566/app-xray.git
+cd app-xray
+npm ci
+npm run build
+node dist/cli.js scan /path/to/app
 # 開啟 xray-out/report.html
 ```
 
